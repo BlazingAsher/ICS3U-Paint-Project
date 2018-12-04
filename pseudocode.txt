@@ -1,0 +1,23 @@
+<setup> (at least 1024 x 768, colours, variables)
+
+while runing:
+    <event loop>
+    # selecting the tool
+        if <click on pencil tool>
+            tool = "pencil"
+        elif <click on eraser tool>
+            tool = "eraser"
+        <more if statements for all tools>
+
+    # using the tool
+    if <click on canvas>:
+        if tool = "pencil":
+            draw.line(screen, col, (omx, omy), (mx, my))
+
+        elif tool=="eraser":
+            draw.circle(screen, WHITE, (mx, my), rad)
+        <more IF STATEMENTS for all tools
+    # change color
+    if <click on colour palette>:
+        col = screen.get_at((mx, my))
+    display.flip()
