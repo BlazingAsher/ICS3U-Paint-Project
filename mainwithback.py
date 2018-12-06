@@ -19,11 +19,13 @@ dragStart = (0, 0)
 lastTickLocation = (0, 0)
 oldscreen = None
 canvasLoc = (150, 80)
-cropSurface = None
-mustBeOverCanvas = ["bucket", "crop"]
+
+backgroundSurface = Surface((700, 500))
+backgroundSurface.fill((255, 255, 255))
 
 canvasSurface = Surface((700, 500))
-canvasSurface.fill(WHITE)
+canvasSurface.set_colorkey((255, 255, 254))
+canvasSurface.fill((255, 255, 254))
 
 # Whether a tool is currently engaged
 lock = False
@@ -37,13 +39,14 @@ rectRegistry = {"colourDisplayRect": [Rect(865, 300, 50, 50), WHITE, 0],
                 "shapeRectRect": [Rect(20, 170, 40, 40), GREEN, 2],
                 "shapeEllipseRect": [Rect(70, 170, 40, 40), GREEN, 2],
                 "lineRect": [Rect(20, 260, 40, 40), GREEN, 2], "airbrushRect": [Rect(70, 260, 40, 40), GREEN, 2],
-                "bucketRect": [Rect(20, 350, 40, 40), GREEN, 2], "cropRect": [Rect(70, 350, 40, 40), GREEN, 2]}
+                "bucketRect": [Rect(20, 350, 40, 40), GREEN, 2]}
 
 palRect = Rect(865, 80, 200, 200)
 canvasRect = Rect(150, 80, 700, 500)
 
 #draw.rect(screen, WHITE, canvasRect)
 
+screen.blit(backgroundSurface, canvasLoc)
 screen.blit(canvasSurface, canvasLoc)
 
 # Local ALL images before the while loop
@@ -69,6 +72,8 @@ def nothing(mpos, lregistry):
 # Pencil tool
 # Draw many lines so that we get a continuous line, like a pencil
 def pencil(mpos, lregistry):
+    draw.circle(canvasSurface, GREEN, (0, 0), 5)
+    print(mpos)
     draw.line(canvasSurface, lregistry["toolColour"], lastTickLocation, mpos, lregistry["toolThickness"])
 
 # Rectangle shape tool
@@ -76,6 +81,7 @@ def dShapeRect(mpos, lregistry):
     global shapeFilled
     # Restore old version of screen so that we don't get overlap
     canvasSurface.blit(oldscreen, (0, 0))
+    #canvasSurface.fill(BLUE)
 
     # Very sketchy way of changing the rectangle depending on a negative width and/or height
 
@@ -109,19 +115,12 @@ def dShapeRect(mpos, lregistry):
                                                     mpos[1]-dragStart[1]), 0)
 
 
-
-def crop(mpos, lregistry):
-    global cropSurface
-    canvasSurface.blit(oldscreen, (0, 0))
-    tempRect = Rect(dragStart[0], dragStart[1], mpos[0]-dragStart[0], mpos[1]-dragStart[1])
-    tempRect.normalize()
-    cropSurface = oldscreen.subsurface(tempRect)
-    draw.rect(canvasSurface, RED, tempRect, 2)
-
 def dShapeEllipse(mpos, lregistry):
     global shapeFilled, dragStart
     # Restore old version of screen so that we don't get overlap
-    canvasSurface.blit(oldscreen, (0, 0))
+    #canvasSurface.blit(oldscreen, (0, 0))
+    print(randint(0,255))
+    screen.fill(WHITE)
 
     keyColour = (255, 255, 253)
 
@@ -147,7 +146,8 @@ def dShapeEllipse(mpos, lregistry):
 
 def eraser(mpos, lregistry):
     # Draw a white circle to "erase"
-    draw.circle(canvasSurface, WHITE, mpos, lregistry["toolThickness"])
+    draw.circle(canvasSurface, (255, 255, 254), mpos, lregistry["toolThickness"])
+    screen.blit(backgroundSurface, canvasLoc)
 
 
 # Function that draws lines
@@ -176,31 +176,30 @@ def airbrush(mpos, lregistry):
 
 
 def bucket(mpos, lregistry):
-    global screen, width, height, toolDelay
+    global screen, width, height
+    pxArray = PixelArray(canvasSurface)
+    sPxArray = PixelArray(screen)
+    colourAtMouse = sPxArray[convertToGlobal(mpos)]
 
-    if ptime.time() - toolDelay > 0.001:
-        pxArray = PixelArray(canvasSurface)
-        colourAtMouse = pxArray[mpos[0], mpos[1]]
-
-        queue = set()
-        filled = set()
-        queue.add((mpos[0], mpos[1]))
-        fillColour = screen.map_rgb(lregistry["toolColour"])
-        print(queue)
-        while queue:
-            currPos = queue.pop()
-            filled.add(currPos)
-            pxArray[currPos[0], currPos[1]] = fillColour
-            if currPos[0] - 1 >= 0 and pxArray[currPos[0] - 1, currPos[1]] == colourAtMouse and (currPos[0]-1, currPos[1]) not in filled:
-                queue.add((currPos[0] - 1, currPos[1]))
-            if currPos[0] + 1 < canvasSurface.get_width() and pxArray[currPos[0] + 1, currPos[1]] == colourAtMouse and (currPos[0]+1, currPos[1]) not in filled:
-                queue.add((currPos[0] + 1, currPos[1]))
-            if currPos[1] - 1 >= 0 and pxArray[currPos[0], currPos[1]-1] == colourAtMouse and (currPos[0], currPos[1]-1) not in filled:
-                queue.add((currPos[0], currPos[1] - 1))
-            if currPos[1] + 1 < canvasSurface.get_height() and pxArray[currPos[0], currPos[1]+1] == colourAtMouse and (currPos[0], currPos[1]+1) not in filled:
-                queue.add((currPos[0], currPos[1] + 1))
-        del pxArray
-        toolDelay = ptime.time()
+    queue = set()
+    filled = set()
+    queue.add((mpos[0], mpos[1]))
+    fillColour = screen.map_rgb(lregistry["toolColour"])
+    print(queue)
+    while queue:
+        currPos = queue.pop()
+        filled.add(currPos)
+        pxArray[currPos[0], currPos[1]] = fillColour
+        if currPos[0] - 1 >= 0 and sPxArray[convertToGlobal((currPos[0] - 1, currPos[1]))] == colourAtMouse and (currPos[0]-1, currPos[1]) not in filled:
+            queue.add((currPos[0] - 1, currPos[1]))
+        if currPos[0] + 1 < canvasSurface.get_width() and sPxArray[convertToGlobal((currPos[0] + 1, currPos[1]))] == colourAtMouse and (currPos[0]+1, currPos[1]) not in filled:
+            queue.add((currPos[0] + 1, currPos[1]))
+        if currPos[1] - 1 >= 0 and sPxArray[convertToGlobal((currPos[0], currPos[1]-1))] == colourAtMouse and (currPos[0], currPos[1]-1) not in filled:
+            queue.add((currPos[0], currPos[1] - 1))
+        if currPos[1] + 1 < canvasSurface.get_height() and sPxArray[convertToGlobal((currPos[0], currPos[1]+1))] == colourAtMouse and (currPos[0], currPos[1]+1) not in filled:
+            queue.add((currPos[0], currPos[1] + 1))
+    del pxArray
+    del sPxArray
 
 
 # Initialize the registry
@@ -232,9 +231,6 @@ while running:
         if evt.type == MOUSEBUTTONUP:
             if not canvasRect.collidepoint(mp[0], mp[1]):
                 lock = False
-            if cropSurface:
-                screen.blit(cropSurface, convertToGlobal(dragStart))
-                cropSurface = None
     # Sync the colour showing rect's colour in the rectRegistry to the tool colour
     rectRegistry["colourDisplayRect"][1] = registry["toolColour"]
 
@@ -307,14 +303,6 @@ while running:
                 if not key == "colourDisplayRect":
                     rectRegistry[key][1] = GREEN
             rectRegistry["bucketRect"][1] = RED
-        elif rectRegistry["cropRect"][0].collidepoint(mp[0], mp[1]):
-            registry["toolFunc"] = crop
-            registry["toolName"] = "crop"
-            registry["toolArgs"]["updateOldPerTick"] = False
-            for key, value in rectRegistry.items():
-                if not key == "colourDisplayRect":
-                    rectRegistry[key][1] = GREEN
-            rectRegistry["cropRect"][1] = RED
 
     # Check if the mouse is over the colour wheel and a tool is currently not being used
     if mb[0] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]):
@@ -328,7 +316,7 @@ while running:
         #screen.set_clip(canvasRect)
 
         # Execute the tool function unless it is the paint bucket
-        if not registry["toolName"] in mustBeOverCanvas or canvasRect.collidepoint(mp[0], mp[1]):
+        if not registry["toolName"] == "bucket" or canvasRect.collidepoint(mp[0], mp[1]):
             registry["toolFunc"](convertToCanvas(mp), registry)
             screen.blit(canvasSurface, canvasLoc)
         toolDelay = ptime.time()
