@@ -20,22 +20,34 @@ WHITE = (255, 255, 255)
 SONG_END = USEREVENT + 1
 
 display.set_caption("MasseyHacks Paint")
+# Control variable
 running = True
+# Tracks where a drag started
 dragStart = (0, 0)
+# Tracks where the mouse was at the last loop iteration
 lastTickLocation = (0, 0)
+# Stores the old canvas when doing drag tools such as ellipse and rectange
 oldscreen = None
+# Location of the canvas surface
 canvasLoc = (150, 80)
+# Stores the subsurface of the canvas that is selected for crop
 cropSurface = None
 # Whether a tool is currently engaged
 tooling = False
+# Tools that will only be executed if the dragging started over the canvas
 mustBeOverCanvas = ["bucket", "crop"]
+# Rectangles whose colours will not be updated by the loop
 doNotUpdateOnReDraw = ["colourDisplayRect", "backDisplayRect"]
-saves = []
+# List of surfaces to undo
+undoList = []
+# Current index of the saves list for undo and redo
 undoLoc = 0
-lastSave = None
+# Stores whether there has been a change since the last save
 needToSave = False
+# The size of the canvas
 canvasSize = (700,  500)
 
+# Stores settings for the music player
 musicRegistry = {"playing": "", "queue": [], "played": [], "loop": False, "loopPlaylist": False, "playMode": 0}
 # Play mode:
 # Float - paused and location
@@ -43,19 +55,24 @@ musicRegistry = {"playing": "", "queue": [], "played": [], "loop": False, "loopP
 # 1 - Random
 # 2 - By filename
 
+# Defines the canvas surface and fills it with white
 canvasSurface = Surface(canvasSize)
 canvasSurface.fill(WHITE)
 
-saves.append(canvasSurface.copy())
+# Adds a blank surface to the undo list
+undoList.append(canvasSurface.copy())
 
+# Whether to fills shapes
 shapeFilled = False
+
+# Rate limits tools such as air brush
 toolDelay = ptime.time()
 
 # Initialize Tkinter and hide it
 root = Tk()
 root.withdraw()
 
-# Initialize the rectangles
+# Initialize the rectangles and store them in a dictionary
 rectRegistry = {"colourDisplayRect": [Rect(865, 300, 50, 50), WHITE, 0],
                 "backColourDisplayRect": [Rect(915, 300, 50, 50), WHITE, 0],
                 "pencilRect": [Rect(20, 80, 40, 40), GREEN, 2], "eraserRect": [Rect(70, 80, 40, 40), GREEN, 2],
@@ -64,28 +81,35 @@ rectRegistry = {"colourDisplayRect": [Rect(865, 300, 50, 50), WHITE, 0],
                 "lineRect": [Rect(20, 260, 40, 40), GREEN, 2], "airbrushRect": [Rect(70, 260, 40, 40), GREEN, 2],
                 "bucketRect": [Rect(20, 350, 40, 40), GREEN, 2], "cropRect": [Rect(70, 350, 40, 40), GREEN, 2]}
 
+# Define the palette collide point rectange (will not be drawn)
 palRect = Rect(865, 80, 200, 200)
+# Define the canvas collide point rectange (will not be drawn)
 canvasRect = Rect(150, 80, canvasSize[0], canvasSize[1])
+# Define the rectangle to clear the canvas
 clearRect = Rect(865, 400, 50, 50)
 
+# Define the open and save buttons
 openRect = Rect(865, 500, 50, 50)
 saveRect = Rect(935, 500, 50, 50)
 
-#draw.rect(screen, WHITE, canvasRect
-
+# Blit the canvas on to the screen
 screen.blit(canvasSurface, canvasLoc)
 
-# Local ALL images before the while loop
+# Load ALL images before the while loop
 palPic = image.load("images/colpal.png")
 screen.blit(palPic, (865, 80))
 
+# Initialize the mixer and give it an event type to trigger on music finish
 mixer.init()
 mixer.music.set_endevent(SONG_END)
 
+
+# Converts co-ordinates from global scope to canvas scope
 def convertToCanvas(pos):
     return (pos[0] - canvasLoc[0], pos[1] - canvasLoc[1])
 
 
+# Converts co-ordinates from canvas scope to global scope
 def convertToGlobal(pos):
     return (pos[0] + canvasLoc[0], pos[1] + canvasLoc[1])
 
@@ -98,43 +122,55 @@ def nothing(mpos, lregistry):
 # Pencil tool
 # Draw many lines so that we get a continuous line, like a pencil
 def pencil(mpos, lregistry):
+    # Draw a line and limit it to 4 pixels wide
     draw.line(canvasSurface, lregistry["toolColour"], lastTickLocation, mpos,
               lregistry["toolThickness"] if lregistry["toolThickness"] <= 4 else 4)
 
 
+# Open a file and load it onto the canvas
 def openFile(lregistry):
-    global needToSave, undoLoc, saves
+    global needToSave, undoLoc, undoList
+
+    # Check if the user has made any modifications since the last save
     if needToSave:
         q = messagebox.askokcancel("MasseyHacks Paint", "You have unsaved changes that will be overwritten. Continue?")
         if not q:
+            # If they say cancel, cancel
             return
 
+    # Ask for the file to open
     root.filename = filedialog.askopenfilename(initialdir="%DEFAULTUSERPROFILE%.", title="Select file",
                                                filetypes=(("JPEG Files", "*.jpg *.jpeg"), ("Bitmap Files", "*.bmp"),
                                                           ("PNG Files", "*.png"), ("All Files", "*.*")))
-    print("hi", root.filename)
-    #openedFile = image.load(root.filename)
+    # If the filename is not blank (canceled) and it still exists, open it
     if root.filename != "" and os.path.isfile(root.filename):
         openedFile = image.load(root.filename)
-        print(openedFile.get_width(), canvasSurface.get_width(), openedFile.get_height(), canvasSurface.get_height())
+
+        # Fit the image to the canvas if it is too big
         if openedFile.get_width() > canvasSurface.get_width() or openedFile.get_height() > canvasSurface.get_height():
             openedFile = transform.smoothscale(openedFile, canvasSize)
-        del saves[:]
-        canvasSurface.fill(lregistry["backgroundColour"])
-        saves.append(canvasSurface.copy())
-        canvasSurface.blit(openedFile, (0,0))
 
-        saves.insert(0, canvasSurface.copy())
+        # Clear the undo list
+        del undoList[:]
+
+        # Fill the background with the background colour and blit the image
+        canvasSurface.fill(lregistry["backgroundColour"])
+        undoList.append(canvasSurface.copy())
+        canvasSurface.blit(openedFile, (0,0))
+        undoList.insert(0, canvasSurface.copy())
         undoLoc = 0
         screen.blit(canvasSurface, canvasLoc)
 
         needToSave = False
 
+
+# Saves the canvas to a file
 def saveFile():
     global needToSave
     root.filename = filedialog.asksaveasfilename(initialdir="%DEFAULTUSERPROFILE%.", title="Select file",
                                                filetypes=(("JPEG Files", "*.jpg *.jpeg"), ("Bitmap Files", "*.bmp"),
                                                           ("PNG Files", "*.png"), ("All Files", "*.*")), defaultextension="*.*")
+    # Check if the user canceled the operation
     if root.filename != "":
         image.save(canvasSurface, root.filename)
         messagebox.showinfo("MasseyHacks Paint", "Your file has been saved.")
@@ -168,7 +204,7 @@ def dShapeRect(mpos, lregistry):
                      "mpos[1] - (dragStart[1] + i*2))"
 
     # Draw a smooth rectangle (only for unfilled), unless the thickness is greater than the size of the rectangle
-    # In that case, always draw a filled rectangle with the specified size
+    # In that case, always draw a filled rectangle with the current dragged size
     if lregistry["toolThickness"] * 2 < min(abs(mpos[0] - dragStart[0]), abs(mpos[1] - dragStart[1])) and not shapeFilled:
         for i in range(lregistry["toolThickness"]):
             tempRect = eval(rectString)
@@ -179,33 +215,44 @@ def dShapeRect(mpos, lregistry):
                                                     mpos[1]-dragStart[1]), 0)
 
 
+# Crop tool
 def crop(mpos, lregistry):
     global cropSurface
+    # Restore the old screen as we are drawing the guide rectangle
     canvasSurface.blit(oldscreen, (0, 0))
     tempRect = Rect(dragStart[0], dragStart[1], mpos[0]-dragStart[0], mpos[1]-dragStart[1])
     tempRect.normalize()
+    # Make sure the width is reasonable before cropping
     if tempRect.height > 2 and tempRect.width > 2:
+        # Take a screen capture and then draw the guide rectangle
         cropSurface = oldscreen.subsurface(tempRect)
         draw.rect(canvasSurface, RED, tempRect, 2)
 
 
+# Ellipse tool
 def dShapeEllipse(mpos, lregistry):
     global shapeFilled, dragStart
     # Restore old version of screen so that we don't get overlap
     canvasSurface.blit(oldscreen, (0, 0))
 
+    # Define a key colour for the temporary surface
     keyColour = (255, 255, 253)
 
+    # Define a rectangle for the ellipse
     tempRect = Rect(dragStart[0], dragStart[1], mpos[0] - dragStart[0],
                     mpos[1] - dragStart[1])
     tempRect.normalize()
+    # Grab the x, y, width, and height of the normalized rectangle
     rx, ry, rw, rh = tempRect
+    # Only create an unfilled ellipse if the dimensions are greater than the width and the shape is not to be filled
     if lregistry["toolThickness"] * 2 < min(abs(mpos[0] - dragStart[0]), abs(mpos[1] - dragStart[1])) and not shapeFilled:
+        # Create a temp surface with the width and height of the rectangle
         tempSurface = Surface((rw, rh))
+        # Set the key colour and fill the surface so that it is transparent
         tempSurface.set_colorkey(keyColour)
         tempSurface.fill(keyColour)
-        tempRect = Rect(0, 0, rw, rh)
-        tempRect.normalize()
+
+        # Draw an ellipse and then a smaller one filled with the key colour to create the effect of an unfilled ellipse
         draw.ellipse(tempSurface, lregistry["toolColour"], (0, 0, rw, rh))
         draw.ellipse(tempSurface, keyColour,
                      (lregistry["toolThickness"], lregistry["toolThickness"], rw - lregistry["toolThickness"]*2,
@@ -216,9 +263,9 @@ def dShapeEllipse(mpos, lregistry):
         draw.ellipse(canvasSurface, lregistry["toolColour"], tempRect, 0)
 
 
+# Eraser tool
 def eraser(mpos, lregistry):
-    global lastTickLocation
-    # Draw a white circle to "erase"
+    # Interpolate circles so that it is smooth
     dx = mpos[0] - lastTickLocation[0]
     dy = mpos[1] - lastTickLocation[1]
     dist = int((dx**2+dy**2)**0.5)
@@ -226,6 +273,7 @@ def eraser(mpos, lregistry):
         dotX = int(lastTickLocation[0] + i*dx/dist)
         dotY = int(lastTickLocation[1] + i*dy/dist)
         draw.circle(canvasSurface, lregistry["backgroundColour"], (dotX, dotY), lregistry["toolThickness"])
+    # Draw an initial circle so that you don't need to move to draw a circle
     draw.circle(canvasSurface, lregistry["backgroundColour"], mpos, lregistry["toolThickness"])
 
 
@@ -240,36 +288,54 @@ def line(mpos, lregistry):
 
 def airbrush(mpos, lregistry):
     global toolDelay
-    # Rate limiting
+    # Rate limiting so that the circle is not automatically completely filled
     if ptime.time() - toolDelay > 0.00100003:
         toolDelay = ptime.time()
+        # Randomly choose the number of points to draw
         numPoints = randint(0, 10)
         pointList = []
+        # Fill the points list with random points
         while len(pointList) < numPoints:
             x = randint(mpos[0]-lregistry["toolThickness"] // 2, mpos[0]+lregistry["toolThickness"] // 2)
             y = randint(mpos[1] - lregistry["toolThickness"] // 2, mpos[1] + lregistry["toolThickness"] // 2)
+            # Check if the point is within a circle with radius of half the tool thickness
             if ((x-mpos[0])**2 + (y-mpos[1])**2)**0.5 < lregistry["toolThickness"]/2:
                 pointList.append((x, y))
+        # Draw the selected points as aa circles (looks better)
         for point in pointList:
             gfxdraw.circle(canvasSurface, point[0], point[1], 1, lregistry["toolColour"])
 
 
+# Paint bucket tool
 def bucket(mpos, lregistry):
-    global screen, width, height, toolDelay
+    global toolDelay
 
+    # Rate limiting so that the program doesn't make many operations per click
     if ptime.time() - toolDelay > 0.001:
+        # Convert the surface into a pixel array (MUCH better performance)
         pxArray = PixelArray(canvasSurface)
+        # Grab the colour at the position of the mouse
         colourAtMouse = pxArray[mpos[0], mpos[1]]
 
+        # Create a queue and a set of points already travelled to so that we don't loop infinitely
         queue = set()
         filled = set()
+
+        # Add the current mouse position
         queue.add((mpos[0], mpos[1]))
+
+        # Gets a mapped RGB value to be filled
         fillColour = screen.map_rgb(lregistry["toolColour"])
         print(queue)
         while queue:
+            # Remove the current pos from the queue
             currPos = queue.pop()
+            # Add it to the filled set
             filled.add(currPos)
+            # Change the colour of the point to the colour desired
             pxArray[currPos[0], currPos[1]] = fillColour
+
+            # Add adjacent points as long as they are the same colour as the point at the mouse and they are valid
             if currPos[0] - 1 >= 0 and pxArray[currPos[0] - 1, currPos[1]] == colourAtMouse and (currPos[0]-1, currPos[1]) not in filled:
                 queue.add((currPos[0] - 1, currPos[1]))
             if currPos[0] + 1 < canvasSurface.get_width() and pxArray[currPos[0] + 1, currPos[1]] == colourAtMouse and (currPos[0]+1, currPos[1]) not in filled:
@@ -278,7 +344,10 @@ def bucket(mpos, lregistry):
                 queue.add((currPos[0], currPos[1] - 1))
             if currPos[1] + 1 < canvasSurface.get_height() and pxArray[currPos[0], currPos[1]+1] == colourAtMouse and (currPos[0], currPos[1]+1) not in filled:
                 queue.add((currPos[0], currPos[1] + 1))
+        # Delete the pixel array (memory management)
         del pxArray
+
+        # Update the tool delay
         toolDelay = ptime.time()
 
 
@@ -300,15 +369,15 @@ while running:
             if evt.key == K_c:
                 print(screen.get_at(mp), canvasSurface.get_at(convertToCanvas(mp)))
             if evt.key == K_u:
-                if len(saves) > undoLoc:
-                    canvasSurface.blit(saves[undoLoc], (0, 0))
+                if len(undoList) > undoLoc:
+                    canvasSurface.blit(undoList[undoLoc], (0, 0))
                     undoLoc += 1
                     screen.blit(canvasSurface, canvasLoc)
                     print("undo", undoLoc)
             if evt.key == K_r:
                 if undoLoc - 1 >= 0:
                     undoLoc -= 2
-                    canvasSurface.blit(saves[undoLoc], (0, 0))
+                    canvasSurface.blit(undoList[undoLoc], (0, 0))
                     undoLoc += 1
                     screen.blit(canvasSurface, canvasLoc)
                     print("redo", undoLoc)
@@ -327,11 +396,11 @@ while running:
             if (canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and registry["toolName"] != "Nothing") or \
                 (clearRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1])):
                 needToSave = True
-                saves.insert(0, canvasSurface.copy())
+                undoList.insert(0, canvasSurface.copy())
                 undoLoc = 1
-                if len(saves) > 30:
-                    saves.pop()
-                print(len(saves))
+                if len(undoList) > 30:
+                    undoList.pop()
+                print(len(undoList))
         if evt.type == SONG_END:
             if musicRegistry["loop"]:
                 mixer.music.play(musicRegistry["playing"])
@@ -358,7 +427,6 @@ while running:
     rectRegistry["backColourDisplayRect"][1] = registry["backgroundColour"]
 
     # Draw rects
-
     for key, rectArray in rectRegistry.items():
         draw.rect(screen, rectArray[1], rectArray[0], rectArray[2])
     draw.rect(screen, WHITE, clearRect)
@@ -367,13 +435,10 @@ while running:
 
 
     # Check if the cursor was drawing and did not release
-    # Check if the cursor has clicking on a tool button
-    #print(toolDelay - ptime.time())
-
+    # Check if the cursor has clicked on a tool button
     if mb[0] and not tooling and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]):
         # Set the toolFunc in the registry to be the tool that was chosen, and whether the starting pos will be
-        # updated per tick
-        print("change")
+        # updated per tick and update the colour of the rectangle to show selected
         if rectRegistry["pencilRect"][0].collidepoint(mp[0], mp[1]):
             registry["toolFunc"] = pencil
             registry["toolName"] = "Pencil"
@@ -482,15 +547,20 @@ while running:
         dragStart = convertToCanvas(mp)
         lastTickLocation = convertToCanvas(mp)
 
+    # Draw the cropped surface onto the canvas after the tool is let go
     if cropSurface and not tooling:
-        print("hi")
+        # Resize it and blit the new cropped surface
         newCrop = transform.smoothscale(cropSurface, canvasSize)
         canvasSurface.blit(newCrop, (0, 0))
         del newCrop
+        # Blit the canvas to the screen
         screen.blit(canvasSurface, canvasLoc)
+        # Clear the cropped surface
         cropSurface = None
-        saves.pop(0)
-        saves.insert(0, canvasSurface.copy())
+        # Remove the latest surface, as it will contain the guide rectangle and replace it with a copy of the canvas
+        undoList.pop(0)
+        undoList.insert(0, canvasSurface.copy())
+        # Mark as a change occured
         needToSave = True
     # Update the display
     display.flip()
