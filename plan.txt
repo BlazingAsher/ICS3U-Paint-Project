@@ -1,0 +1,9 @@
+tools:
+- eraser
+- bucket
+- text
+- brush
+- pencil
+- crop
+- rectange
+- ellipse

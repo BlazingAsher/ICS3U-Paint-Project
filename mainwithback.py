@@ -120,7 +120,7 @@ def dShapeEllipse(mpos, lregistry):
     # Restore old version of screen so that we don't get overlap
     #canvasSurface.blit(oldscreen, (0, 0))
     print(randint(0,255))
-    screen.fill(WHITE)
+    #screen.fill(WHITE)
 
     keyColour = (255, 255, 253)
 

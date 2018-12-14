@@ -12,6 +12,7 @@ while runing:
     # using the tool
     if <click on canvas>:
         if tool = "pencil":
+
             draw.line(screen, col, (omx, omy), (mx, my))
 
         elif tool=="eraser":
