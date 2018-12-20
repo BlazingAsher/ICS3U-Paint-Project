@@ -1,0 +1,54 @@
+{
+  "title": "Microsoft Paint",
+  "backgroundImage": "images/background.jpg",
+  "canvasLocation": [150, 80],
+  "canvasSize": [700, 500],
+  "screenSize": [1080, 768],
+  "paletteImage": "images/colpal.png",
+  "paletteSize": [200, 200],
+  "paletteLocation": [865, 80],
+  "rects": {
+   "colourDisplayRect":[
+      [865, 300, 50, 50], "WHITE", 0
+   ],
+    "backColourDisplayRect":[
+      [915, 300, 50, 50], "WHITE", 0
+   ],
+   "pencilRect":[
+      [20, 80, 40, 40], "GREEN", 2
+   ],
+   "eraserRect":[
+      [70,80,40,40],"GREEN", 2
+   ],
+   "shapeRectRect":[
+     [20,170,40,40],"GREEN", 2
+   ],
+   "shapeEllipseRect":[
+     [70,170,40,40],"GREEN", 2
+   ],
+   "lineRect":[
+     [20,260,40,40],"GREEN", 2
+   ],
+   "airbrushRect":[
+     [70,260,40,40],"GREEN", 2
+   ],
+   "bucketRect":[
+     [20,350,40,40],"GREEN", 2
+   ],
+   "cropRect":[
+     [70,350,40,40],"GREEN", 2
+   ],
+   "brushRect":[
+     [20,440,40,40],"GREEN", 2
+   ],
+    "openRect":[
+     [865, 500, 50, 50],"GREEN", 2
+   ],
+    "saveRect":[
+     [935, 500, 50, 50],"GREEN", 2
+   ],
+    "clearRect":[
+     [865, 400, 50, 50],"GREEN", 2
+   ]
+}
+}

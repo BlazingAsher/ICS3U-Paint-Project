@@ -7,10 +7,33 @@ import time as ptime
 from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import *
+import json
 import os
+import sys
+title = "Microsoft Paint"
+startTime = ptime.time()
+print("Starting initialization process")
 
+# Load the configuration file
+print("Loading configuration")
+try:
+    with open("config.json", "r") as configFile:
+        config = json.load(configFile)
+except IOError:
+    print("Unable to load configuration! Ensure that config.json exists!")
+    sys.exit(1)
+except ValueError:
+    print("Invalid configuration! Ensure that config.json is valid JSON!")
+    sys.exit(1)
+try :
+    with open(".git/refs/heads/master") as versionFile:
+        version = versionFile.read()
+except IOError:
+    version = "unknown"
+print("Loaded configuration!")
+print("%d keys loaded into registry" % len(config))
 
-size = width, height = (1080, 768)
+size = width, height = config["screenSize"]
 screen = display.set_mode(size)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
@@ -19,7 +42,13 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 SONG_END = USEREVENT + 1
 
-display.set_caption("MasseyHacks Paint")
+
+display.set_caption(title)
+
+backgroundImage = image.load(config["backgroundImage"])
+backgroundImage = transform.smoothscale(backgroundImage, size)
+screen.blit(backgroundImage, (0,0))
+
 # Control variable
 running = True
 # Tracks where a drag started
@@ -29,19 +58,22 @@ lastTickLocation = (0, 0)
 # Stores the old canvas when doing drag tools such as ellipse and rectange
 oldscreen = None
 # Location of the canvas surface
-canvasLoc = (150, 80)
+canvasLoc = config["canvasLocation"]
 # Stores the subsurface of the canvas that is selected for crop
 cropSurface = None
 # Whether a tool is currently engaged
 tooling = False
 # Tools that will only be executed if the dragging started over the canvas
-mustBeOverCanvas = ["bucket", "crop"]
+mustBeOverCanvas = ["bucket", "crop", "brush"]
 # Rectangles whose colours will not be updated by the loop
 doNotUpdateOnReDraw = ["colourDisplayRect", "backDisplayRect"]
-# List of surfaces to undo
+# List of surfaces to undo and redo
 undoList = []
-# Current index of the saves list for undo and redo
-undoLoc = 0
+redoList = []
+
+# Whether the tool modified the canvas on the iteration
+toolStatus = False
+
 # Stores whether there has been a change since the last save
 needToSave = False
 # The size of the canvas
@@ -62,6 +94,9 @@ canvasSurface.fill(WHITE)
 # Adds a blank surface to the undo list
 undoList.append(canvasSurface.copy())
 
+# Store the music to be played
+musicList = []
+
 # Whether to fills shapes
 shapeFilled = False
 
@@ -73,36 +108,42 @@ root = Tk()
 root.withdraw()
 
 # Initialize the rectangles and store them in a dictionary
-rectRegistry = {"colourDisplayRect": [Rect(865, 300, 50, 50), WHITE, 0],
-                "backColourDisplayRect": [Rect(915, 300, 50, 50), WHITE, 0],
-                "pencilRect": [Rect(20, 80, 40, 40), GREEN, 2], "eraserRect": [Rect(70, 80, 40, 40), GREEN, 2],
-                "shapeRectRect": [Rect(20, 170, 40, 40), GREEN, 2],
-                "shapeEllipseRect": [Rect(70, 170, 40, 40), GREEN, 2],
-                "lineRect": [Rect(20, 260, 40, 40), GREEN, 2], "airbrushRect": [Rect(70, 260, 40, 40), GREEN, 2],
-                "bucketRect": [Rect(20, 350, 40, 40), GREEN, 2], "cropRect": [Rect(70, 350, 40, 40), GREEN, 2]}
 
-# Define the palette collide point rectange (will not be drawn)
-palRect = Rect(865, 80, 200, 200)
-# Define the canvas collide point rectange (will not be drawn)
-canvasRect = Rect(150, 80, canvasSize[0], canvasSize[1])
+rectRegistry = {"colourDisplayRect": [Rect(config["rects"]["colourDisplayRect"][0]), eval(config["rects"]["colourDisplayRect"][1]), config["rects"]["colourDisplayRect"][2]],
+                "backColourDisplayRect": [Rect(config["rects"]["backColourDisplayRect"][0]), eval(config["rects"]["backColourDisplayRect"][1]), config["rects"]["backColourDisplayRect"][2]],
+                "pencilRect": [Rect(config["rects"]["pencilRect"][0]), eval(config["rects"]["pencilRect"][1]), config["rects"]["pencilRect"][2]],
+                "eraserRect": [Rect(config["rects"]["eraserRect"][0]), eval(config["rects"]["eraserRect"][1]), config["rects"]["eraserRect"][2]],
+                "shapeRectRect": [Rect(config["rects"]["shapeRectRect"][0]), eval(config["rects"]["shapeRectRect"][1]), config["rects"]["shapeRectRect"][2]],
+                "shapeEllipseRect": [Rect(config["rects"]["shapeEllipseRect"][0]), eval(config["rects"]["shapeEllipseRect"][1]), config["rects"]["shapeEllipseRect"][2]],
+                "lineRect": [Rect(config["rects"]["lineRect"][0]), eval(config["rects"]["lineRect"][1]), config["rects"]["lineRect"][2]],
+                "airbrushRect": [Rect(config["rects"]["airbrushRect"][0]), eval(config["rects"]["airbrushRect"][1]), config["rects"]["airbrushRect"][2]],
+                "bucketRect": [Rect(config["rects"]["bucketRect"][0]), eval(config["rects"]["bucketRect"][1]), config["rects"]["bucketRect"][2]],
+                "cropRect": [Rect(config["rects"]["cropRect"][0]), eval(config["rects"]["cropRect"][1]), config["rects"]["cropRect"][2]],
+                "brushRect": [Rect(config["rects"]["brushRect"][0]), eval(config["rects"]["brushRect"][1]), config["rects"]["brushRect"][2]]}
+
+# Define the palette collide point rectangle (will not be drawn)
+palRect = Rect(config["paletteLocation"][0], config["paletteLocation"][1], config["paletteSize"][0], config["paletteSize"][1])
+# Define the canvas collide point rectangle (will not be drawn)
+canvasRect = Rect(config["canvasLocation"][0], config["canvasLocation"][1], config["canvasSize"][0], config["canvasSize"][1])
 # Define the rectangle to clear the canvas
-clearRect = Rect(865, 400, 50, 50)
+clearRect = Rect(config["rects"]["clearRect"][0])
 
 # Define the open and save buttons
-openRect = Rect(865, 500, 50, 50)
-saveRect = Rect(935, 500, 50, 50)
+openRect = Rect(config["rects"]["openRect"][0])
+saveRect = Rect(config["rects"]["saveRect"][0])
 
 # Blit the canvas on to the screen
 screen.blit(canvasSurface, canvasLoc)
 
 # Load ALL images before the while loop
-palPic = image.load("images/colpal.png")
-screen.blit(palPic, (865, 80))
+palPic = image.load(config["paletteImage"])
+screen.blit(palPic, config["paletteLocation"])
 
 # Initialize the mixer and give it an event type to trigger on music finish
 mixer.init()
 mixer.music.set_endevent(SONG_END)
 
+print("%s initialized successfully in %0.4fs \nOn commit %s"%(title, ptime.time()-startTime, version))
 
 # Converts co-ordinates from global scope to canvas scope
 def convertToCanvas(pos):
@@ -125,6 +166,7 @@ def pencil(mpos, lregistry):
     # Draw a line and limit it to 4 pixels wide
     draw.line(canvasSurface, lregistry["toolColour"], lastTickLocation, mpos,
               lregistry["toolThickness"] if lregistry["toolThickness"] <= 4 else 4)
+    return True
 
 
 # Open a file and load it onto the canvas
@@ -133,7 +175,7 @@ def openFile(lregistry):
 
     # Check if the user has made any modifications since the last save
     if needToSave:
-        q = messagebox.askokcancel("MasseyHacks Paint", "You have unsaved changes that will be overwritten. Continue?")
+        q = messagebox.askokcancel(title, "You have unsaved changes that will be overwritten. Continue?")
         if not q:
             # If they say cancel, cancel
             return
@@ -157,8 +199,7 @@ def openFile(lregistry):
         canvasSurface.fill(lregistry["backgroundColour"])
         undoList.append(canvasSurface.copy())
         canvasSurface.blit(openedFile, (0,0))
-        undoList.insert(0, canvasSurface.copy())
-        undoLoc = 0
+        undoList.append(canvasSurface.copy())
         screen.blit(canvasSurface, canvasLoc)
 
         needToSave = False
@@ -173,7 +214,7 @@ def saveFile():
     # Check if the user canceled the operation
     if root.filename != "":
         image.save(canvasSurface, root.filename)
-        messagebox.showinfo("MasseyHacks Paint", "Your file has been saved.")
+        messagebox.showinfo(title, "Your file has been saved.")
         needToSave = False
 
 
@@ -213,7 +254,7 @@ def dShapeRect(mpos, lregistry):
     else:
         draw.rect(canvasSurface, lregistry["toolColour"], (dragStart[0], dragStart[1], mpos[0]-dragStart[0],
                                                     mpos[1]-dragStart[1]), 0)
-
+    return True
 
 # Crop tool
 def crop(mpos, lregistry):
@@ -227,6 +268,8 @@ def crop(mpos, lregistry):
         # Take a screen capture and then draw the guide rectangle
         cropSurface = oldscreen.subsurface(tempRect)
         draw.rect(canvasSurface, RED, tempRect, 2)
+        return True
+    return False
 
 
 # Ellipse tool
@@ -261,6 +304,7 @@ def dShapeEllipse(mpos, lregistry):
 
     else:
         draw.ellipse(canvasSurface, lregistry["toolColour"], tempRect, 0)
+    return True
 
 
 # Eraser tool
@@ -275,6 +319,7 @@ def eraser(mpos, lregistry):
         draw.circle(canvasSurface, lregistry["backgroundColour"], (dotX, dotY), lregistry["toolThickness"])
     # Draw an initial circle so that you don't need to move to draw a circle
     draw.circle(canvasSurface, lregistry["backgroundColour"], mpos, lregistry["toolThickness"])
+    return True
 
 
 # Function that draws lines
@@ -284,6 +329,7 @@ def line(mpos, lregistry):
 
     # Draw a line from the start of the click to the current position
     draw.line(canvasSurface, lregistry["toolColour"], dragStart, mpos, lregistry["toolThickness"])
+    return True
 
 
 def airbrush(mpos, lregistry):
@@ -304,6 +350,7 @@ def airbrush(mpos, lregistry):
         # Draw the selected points as aa circles (looks better)
         for point in pointList:
             gfxdraw.circle(canvasSurface, point[0], point[1], 1, lregistry["toolColour"])
+    return True
 
 
 # Paint bucket tool
@@ -351,6 +398,20 @@ def bucket(mpos, lregistry):
         toolDelay = ptime.time()
 
 
+# Brush tool
+def brush(mpos, lregistry):
+    # Interpolate circles so that it is smooth
+    dx = mpos[0] - lastTickLocation[0]
+    dy = mpos[1] - lastTickLocation[1]
+    dist = int((dx ** 2 + dy ** 2) ** 0.5)
+    for i in range(1, dist + 1):
+        dotX = int(lastTickLocation[0] + i * dx / dist)
+        dotY = int(lastTickLocation[1] + i * dy / dist)
+        draw.circle(canvasSurface, lregistry["toolColour"], (dotX, dotY), lregistry["toolThickness"])
+    # Draw an initial circle so that you don't need to move to draw a circle
+    draw.circle(canvasSurface, lregistry["toolColour"], mpos, lregistry["toolThickness"])
+    return True
+
 # Initialize the registry
 registry = {"toolName": "Nothing", "toolFunc": nothing, "toolArgs": {"updateOldPerTick": False},
             "toolColour": (255, 255, 255), "toolThickness": 2, "backgroundColour": (255, 255, 255)}
@@ -369,37 +430,33 @@ while running:
             if evt.key == K_c:
                 print(screen.get_at(mp), canvasSurface.get_at(convertToCanvas(mp)))
             if evt.key == K_u:
-                if len(undoList) > undoLoc:
-                    canvasSurface.blit(undoList[undoLoc], (0, 0))
-                    undoLoc += 1
+                if len(undoList) > 1:
+                    redoList.append(undoList.pop())
+                    canvasSurface.blit(undoList[len(undoList)-1], (0, 0))
                     screen.blit(canvasSurface, canvasLoc)
-                    print("undo", undoLoc)
             if evt.key == K_r:
-                if undoLoc - 1 >= 0:
-                    undoLoc -= 2
-                    canvasSurface.blit(undoList[undoLoc], (0, 0))
-                    undoLoc += 1
+                if len(redoList) > 0:
+                    undoList.append(redoList.pop())
+                    canvasSurface.blit(undoList[len(undoList)-1], (0, 0))
                     screen.blit(canvasSurface, canvasLoc)
-                    print("redo", undoLoc)
         if evt.type == MOUSEBUTTONDOWN:
             tooling = True
             oldscreen = canvasSurface.copy()
             dragStart = mouse.get_pos()
             if evt.button == 4:
-                registry["toolThickness"] += 1 if registry["toolThickness"] < 50 else 0
+                registry["toolThickness"] += 1 if registry["toolThickness"] < 100 else 0
             elif evt.button == 5:
                 registry["toolThickness"] -= 1 if registry["toolThickness"] > 1 else 0
         if evt.type == MOUSEBUTTONUP:
             tooling = False
-
+            print("sghafjsgkfsk", clearRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]))
+            print(toolStatus)
             # Undo logic:
-            if (canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and registry["toolName"] != "Nothing") or \
-                (clearRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1])):
+            if ((canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and registry["toolName"] != "Nothing") or
+                (clearRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]))) and toolStatus:
+                print("sagfsg")
                 needToSave = True
-                undoList.insert(0, canvasSurface.copy())
-                undoLoc = 1
-                if len(undoList) > 30:
-                    undoList.pop()
+                undoList.append(canvasSurface.copy())
                 print(len(undoList))
         if evt.type == SONG_END:
             if musicRegistry["loop"]:
@@ -413,15 +470,17 @@ while running:
                         musicRegistry["played"].append(musicName)
                 elif musicRegistry["playMode"] == 2:
                     musicName = musicRegistry["playing"]
-                    tempList = musicRegistry["queue"].copy()
-                    tempList.append(musicName)
-                    tempList.sort()
-                    tempList.append("STOP&!*&#")
-                    musicName = tempList[tempList.index(musicName) if tempList.index(musicName) + 1 < len(tempList)
-                                         else 0 if musicRegistry["loopPlaylist"] else len(tempList) - 1]
-                    if musicName != "STOP&!*&#":
-                        musicRegistry["playing"] = musicName
+                    pos = musicList.index(musicName)
+                    pos += 1 if pos + 1 < len(musicList) else 50000
+                    if pos < 10000:
+                        musicRegistry["playing"] = musicList[pos]
                         mixer.music.play(musicName)
+                    elif musicRegistry["loopPlaylist"]:
+                        pos = 0
+                        musicRegistry["playing"] = musicList[pos]
+                        mixer.music.play(musicName)
+    toolStatus = False
+
     # Sync the colour showing rect's colour in the rectRegistry to the tool colour
     rectRegistry["colourDisplayRect"][1] = registry["toolColour"]
     rectRegistry["backColourDisplayRect"][1] = registry["backgroundColour"]
@@ -503,8 +562,19 @@ while running:
                 if key not in doNotUpdateOnReDraw:
                     rectRegistry[key][1] = GREEN
             rectRegistry["cropRect"][1] = RED
+        elif rectRegistry["brushRect"][0].collidepoint(mp[0], mp[1]):
+            registry["toolFunc"] = brush
+            registry["toolName"] = "brush"
+            registry["toolArgs"]["updateOldPerTick"] = True
+            for key, value in rectRegistry.items():
+                if key not in doNotUpdateOnReDraw:
+                    rectRegistry[key][1] = GREEN
+            rectRegistry["brushRect"][1] = RED
         elif clearRect.collidepoint(mp[0], mp[1]):
+            print("hello!")
             canvasSurface.fill(registry["backgroundColour"])
+            needToSave = True
+            undoList.append(canvasSurface.copy())
             screen.blit(canvasSurface, canvasLoc)
         elif openRect.collidepoint(mp[0], mp[1]):
             openFile(registry)
@@ -513,34 +583,28 @@ while running:
 
     # Check if the mouse is over the colour wheel and a tool is currently not being used
     if mb[0] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]):
-        if palRect.collidepoint(mp[0], mp[1]) and not tooling and ((mp[0]-palRect.centerx)**2 + (mp[1]-palRect.centery)**2)**0.5 < 101:
+        if palRect.collidepoint(mp[0], mp[1])  and ((mp[0]-palRect.centerx)**2 + (mp[1]-palRect.centery)**2)**0.5 < 101:
             # Get the colour and the point
             registry["toolColour"] = screen.get_at((mp[0], mp[1]))
 
     # Check if the mouse is over the colour wheel and a tool is currently not being used
     if mb[2] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]):
-        if palRect.collidepoint(mp[0], mp[1]) and not tooling and (
+        if palRect.collidepoint(mp[0], mp[1]) and (
                 (mp[0] - palRect.centerx) ** 2 + (mp[1] - palRect.centery) ** 2) ** 0.5 < 101:
             # Get the colour and the point
             registry["backgroundColour"] = screen.get_at((mp[0], mp[1]))
 
     # Check if the user clicked on left-click
     if mb[0]:
-        # Prevent tools from drawing outside of canvas
-        #screen.set_clip(canvasRect)
-
-        # Execute the tool function unless it is the paint bucket
+        # Execute the tool function, checking if the drag must start on the canvas
         if not registry["toolName"] in mustBeOverCanvas or canvasRect.collidepoint(mp[0], mp[1]):
-            registry["toolFunc"](convertToCanvas(mp), registry)
-            #print("blitting")
+            toolStatus = registry["toolFunc"](convertToCanvas(mp), registry)
             screen.blit(canvasSurface, canvasLoc)
         toolDelay = ptime.time()
 
         # If the old position needs to be updated per tick, even when the tool is engaged (shadow), update it
         if registry["toolArgs"]["updateOldPerTick"]:
             lastTickLocation = convertToCanvas(mp)
-        # Remove the screen clip so that other elements can be updated
-        #screen.set_clip(None)
     else:
         # If the mouse is currently not being clicked, update the dragStart variable to keep track of where the cursor
         # was. So that we can get a start point for shape tools
@@ -558,9 +622,9 @@ while running:
         # Clear the cropped surface
         cropSurface = None
         # Remove the latest surface, as it will contain the guide rectangle and replace it with a copy of the canvas
-        undoList.pop(0)
-        undoList.insert(0, canvasSurface.copy())
-        # Mark as a change occured
+        undoList.pop()
+        undoList.append(canvasSurface.copy())
+        # Mark as a change occurred
         needToSave = True
     # Update the display
     display.flip()
