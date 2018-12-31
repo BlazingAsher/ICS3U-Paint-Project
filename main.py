@@ -107,6 +107,10 @@ toolDelay = ptime.time()
 root = Tk()
 root.withdraw()
 
+# Initialize fonts
+font.init()
+infoFont = font.SysFont("Segoe UI", 24)
+
 # Initialize the rectangles and store them in a dictionary
 
 rectRegistry = {"colourDisplayRect": [Rect(config["rects"]["colourDisplayRect"][0]), eval(config["rects"]["colourDisplayRect"][1]), config["rects"]["colourDisplayRect"][2]],
@@ -396,6 +400,7 @@ def bucket(mpos, lregistry):
 
         # Update the tool delay
         toolDelay = ptime.time()
+    return True
 
 
 # Brush tool
@@ -411,6 +416,9 @@ def brush(mpos, lregistry):
     # Draw an initial circle so that you don't need to move to draw a circle
     draw.circle(canvasSurface, lregistry["toolColour"], mpos, lregistry["toolThickness"])
     return True
+
+def test():
+    return (0, 0)
 
 # Initialize the registry
 registry = {"toolName": "Nothing", "toolFunc": nothing, "toolArgs": {"updateOldPerTick": False},
@@ -485,6 +493,11 @@ while running:
     rectRegistry["colourDisplayRect"][1] = registry["toolColour"]
     rectRegistry["backColourDisplayRect"][1] = registry["backgroundColour"]
 
+    # Draw images
+    screen.blit(backgroundImage, (0,0))
+    screen.blit(palPic, config["paletteLocation"])
+    screen.blit(canvasSurface, canvasLoc)
+
     # Draw rects
     for key, rectArray in rectRegistry.items():
         draw.rect(screen, rectArray[1], rectArray[0], rectArray[2])
@@ -492,6 +505,10 @@ while running:
     draw.rect(screen, WHITE, openRect)
     draw.rect(screen, WHITE, saveRect)
 
+    # Draw text
+    # Mouse location
+    txtMouseLoc = eval("infoFont.render(\"X: {0}  Y: {1}\".format"+str(convertToCanvas(mp) if canvasRect.collidepoint(mp[0], mp[1]) else (0,0))+", True, WHITE)")
+    screen.blit(txtMouseLoc, (20, height-50))
 
     # Check if the cursor was drawing and did not release
     # Check if the cursor has clicked on a tool button
