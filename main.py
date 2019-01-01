@@ -10,28 +10,42 @@ from tkinter import *
 import json
 import os
 import sys
-title = "Microsoft Paint"
+print("Copyright (c) 2018 David Hui. All rights reserved.")
+print("Permission is hereby granted to modify and redistribute this program for educational purposes with attribution.")
+dev = True
+def smartLog(message, level):
+    levelMap = {0: "[CRIT]", 1:"[ERROR]", 2: "[WARN]", 3:"[INFO]"}
+    if dev or level < 2:
+        print(levelMap[level],message)
+        with open("paint.log", "a+") as logFile:
+            logFile.write(levelMap[level]+" "+message+"\n")
+
 startTime = ptime.time()
-print("Starting initialization process")
+smartLog("Starting initialization process", 3)
+
+smartLog("Development mode is ON! INFO and WARN messages will be displayed!", 3)
 
 # Load the configuration file
-print("Loading configuration")
+smartLog("Loading configuration...", 3)
 try:
     with open("config.json", "r") as configFile:
         config = json.load(configFile)
 except IOError:
-    print("Unable to load configuration! Ensure that config.json exists!")
+    smartLog("Unable to load configuration! Ensure that config.json exists!", 0)
     sys.exit(1)
 except ValueError:
-    print("Invalid configuration! Ensure that config.json is valid JSON!")
+    smartLog("Invalid configuration! Ensure that config.json is valid JSON!", 0)
     sys.exit(1)
 try :
     with open(".git/refs/heads/master") as versionFile:
         version = versionFile.read()
 except IOError:
     version = "unknown"
-print("Loaded configuration!")
-print("%d keys loaded into registry" % len(config))
+
+smartLog("Loaded configuration!", 3)
+smartLog("%d keys loaded into registry" % len(config), 3)
+
+title = config["title"]
 
 size = width, height = config["screenSize"]
 screen = display.set_mode(size)
@@ -64,7 +78,7 @@ cropSurface = None
 # Whether a tool is currently engaged
 tooling = False
 # Tools that will only be executed if the dragging started over the canvas
-mustBeOverCanvas = ["bucket", "crop", "brush"]
+mustBeOverCanvas = ["bucket", "crop", "brush", "stampone", "stamptwo", "stampthree", "stampfour", "stampfive", "stampsix"]
 # Rectangles whose colours will not be updated by the loop
 doNotUpdateOnReDraw = ["colourDisplayRect", "backDisplayRect"]
 # List of surfaces to undo and redo
@@ -110,6 +124,7 @@ root.withdraw()
 # Initialize fonts
 font.init()
 infoFont = font.SysFont("Segoe UI", 24)
+tipFont = font.SysFont("Segoe UI", 16)
 
 # Initialize the rectangles and store them in a dictionary
 
@@ -123,7 +138,13 @@ rectRegistry = {"colourDisplayRect": [Rect(config["rects"]["colourDisplayRect"][
                 "airbrushRect": [Rect(config["rects"]["airbrushRect"][0]), eval(config["rects"]["airbrushRect"][1]), config["rects"]["airbrushRect"][2]],
                 "bucketRect": [Rect(config["rects"]["bucketRect"][0]), eval(config["rects"]["bucketRect"][1]), config["rects"]["bucketRect"][2]],
                 "cropRect": [Rect(config["rects"]["cropRect"][0]), eval(config["rects"]["cropRect"][1]), config["rects"]["cropRect"][2]],
-                "brushRect": [Rect(config["rects"]["brushRect"][0]), eval(config["rects"]["brushRect"][1]), config["rects"]["brushRect"][2]]}
+                "brushRect": [Rect(config["rects"]["brushRect"][0]), eval(config["rects"]["brushRect"][1]), config["rects"]["brushRect"][2]],
+                "stampOneRect": [Rect(config["rects"]["stampOneRect"][0]), eval(config["rects"]["stampOneRect"][1]), config["rects"]["stampOneRect"][2]],
+                "stampTwoRect": [Rect(config["rects"]["stampTwoRect"][0]), eval(config["rects"]["stampTwoRect"][1]), config["rects"]["stampTwoRect"][2]],
+                "stampThreeRect": [Rect(config["rects"]["stampThreeRect"][0]), eval(config["rects"]["stampThreeRect"][1]), config["rects"]["stampThreeRect"][2]],
+                "stampFourRect": [Rect(config["rects"]["stampFourRect"][0]), eval(config["rects"]["stampFourRect"][1]), config["rects"]["stampFourRect"][2]],
+                "stampFiveRect": [Rect(config["rects"]["stampFiveRect"][0]), eval(config["rects"]["stampFiveRect"][1]), config["rects"]["stampFiveRect"][2]],
+                "stampSixRect": [Rect(config["rects"]["stampSixRect"][0]), eval(config["rects"]["stampSixRect"][1]), config["rects"]["stampSixRect"][2]]}
 
 # Define the palette collide point rectangle (will not be drawn)
 palRect = Rect(config["paletteLocation"][0], config["paletteLocation"][1], config["paletteSize"][0], config["paletteSize"][1])
@@ -143,11 +164,16 @@ screen.blit(canvasSurface, canvasLoc)
 palPic = image.load(config["paletteImage"])
 screen.blit(palPic, config["paletteLocation"])
 
+# Load the stamps
+for i in range(1, 7):
+    exec("stamp{0} = image.load(config[\"stamp{0}Loc\"])".format(i))
+
 # Initialize the mixer and give it an event type to trigger on music finish
 mixer.init()
 mixer.music.set_endevent(SONG_END)
 
-print("%s initialized successfully in %0.4fs \nOn commit %s"%(title, ptime.time()-startTime, version))
+smartLog("%s initialized successfully in %0.4fs"%(title, ptime.time()-startTime), 3)
+smartLog("On commit %s"%version, 3)
 
 # Converts co-ordinates from global scope to canvas scope
 def convertToCanvas(pos):
@@ -377,7 +403,7 @@ def bucket(mpos, lregistry):
 
         # Gets a mapped RGB value to be filled
         fillColour = screen.map_rgb(lregistry["toolColour"])
-        print(queue)
+        smartLog("QUEUE: "+str(queue), 3)
         while queue:
             # Remove the current pos from the queue
             currPos = queue.pop()
@@ -417,11 +443,19 @@ def brush(mpos, lregistry):
     draw.circle(canvasSurface, lregistry["toolColour"], mpos, lregistry["toolThickness"])
     return True
 
-def test():
-    return (0, 0)
+def stamp(id, mpos, lregistry):
+    # Restore old version of screen so that we don't get overlap
+    canvasSurface.blit(oldscreen, (0, 0))
+
+    # Blit the correct stamp
+    exec("canvasSurface.blit(stamp{0}, (mpos[0]-stamp{0}.get_width()//2, mpos[1]-stamp{0}.get_height()//2))".format(id))
+    return True
+
+def eyeDropper(mpos, lregistry):
+    return canvasSurface.get_at(mpos)
 
 # Initialize the registry
-registry = {"toolName": "Nothing", "toolFunc": nothing, "toolArgs": {"updateOldPerTick": False},
+registry = {"toolName": "nothing", "toolFunc": nothing, "toolArgs": {"updateOldPerTick": False},
             "toolColour": (255, 255, 255), "toolThickness": 2, "backgroundColour": (255, 255, 255)}
 
 while running:
@@ -436,7 +470,7 @@ while running:
             if evt.key == K_b:
                 canvasRe = ""
             if evt.key == K_c:
-                print(screen.get_at(mp), canvasSurface.get_at(convertToCanvas(mp)))
+                smartLog("COLOUR: "+str(screen.get_at(mp)) + " "+ str(canvasSurface.get_at(convertToCanvas(mp))), 3)
             if evt.key == K_u:
                 if len(undoList) > 1:
                     redoList.append(undoList.pop())
@@ -457,15 +491,13 @@ while running:
                 registry["toolThickness"] -= 1 if registry["toolThickness"] > 1 else 0
         if evt.type == MOUSEBUTTONUP:
             tooling = False
-            print("sghafjsgkfsk", clearRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]))
-            print(toolStatus)
+            smartLog("TOOL STATUS: %s"%toolStatus, 3)
             # Undo logic:
-            if ((canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and registry["toolName"] != "Nothing") or
+            if ((canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and registry["toolName"] != "nothing") or
                 (clearRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]))) and toolStatus:
-                print("sagfsg")
                 needToSave = True
                 undoList.append(canvasSurface.copy())
-                print(len(undoList))
+                smartLog("LEN UNDOLIST %d"%len(undoList), 3)
         if evt.type == SONG_END:
             if musicRegistry["loop"]:
                 mixer.music.play(musicRegistry["playing"])
@@ -507,7 +539,9 @@ while running:
 
     # Draw text
     # Mouse location
+    # Draw 0, 0 if the mouse is not over the canvas, otherwise convert mouse pos in global context to canvas context
     txtMouseLoc = eval("infoFont.render(\"X: {0}  Y: {1}\".format"+str(convertToCanvas(mp) if canvasRect.collidepoint(mp[0], mp[1]) else (0,0))+", True, WHITE)")
+    #txtMouseLoc = infoFont.render("X: {0}  Y:{1}".format(mp[0], mp[1]), True, WHITE)
     screen.blit(txtMouseLoc, (20, height-50))
 
     # Check if the cursor was drawing and did not release
@@ -517,7 +551,7 @@ while running:
         # updated per tick and update the colour of the rectangle to show selected
         if rectRegistry["pencilRect"][0].collidepoint(mp[0], mp[1]):
             registry["toolFunc"] = pencil
-            registry["toolName"] = "Pencil"
+            registry["toolName"] = "pencil"
             registry["toolArgs"]["updateOldPerTick"] = True
             for key, value in rectRegistry.items():
                 if key not in doNotUpdateOnReDraw:
@@ -525,7 +559,7 @@ while running:
             rectRegistry["pencilRect"][1] = RED
         elif rectRegistry["eraserRect"][0].collidepoint(mp[0], mp[1]):
             registry["toolFunc"] = eraser
-            registry["toolName"] = "Eraser"
+            registry["toolName"] = "eraser"
             registry["toolArgs"]["updateOldPerTick"] = True
             for key, value in rectRegistry.items():
                 if key not in doNotUpdateOnReDraw:
@@ -533,7 +567,7 @@ while running:
             rectRegistry["eraserRect"][1] = RED
         elif rectRegistry["shapeRectRect"][0].collidepoint(mp[0], mp[1]):
             registry["toolFunc"] = dShapeRect
-            registry["toolName"] = "ShapeRect"
+            registry["toolName"] = "shaperect"
             registry["toolArgs"]["updateOldPerTick"] = False
             for key, value in rectRegistry.items():
                 if key not in doNotUpdateOnReDraw:
@@ -541,7 +575,7 @@ while running:
             rectRegistry["shapeRectRect"][1] = RED
         elif rectRegistry["shapeEllipseRect"][0].collidepoint(mp[0], mp[1]):
             registry["toolFunc"] = dShapeEllipse
-            registry["toolName"] = "ShapeEllipse"
+            registry["toolName"] = "shapeellipse"
             registry["toolArgs"]["updateOldPerTick"] = False
             for key, value in rectRegistry.items():
                 if key not in doNotUpdateOnReDraw:
@@ -549,7 +583,7 @@ while running:
             rectRegistry["shapeEllipseRect"][1] = RED
         elif rectRegistry["lineRect"][0].collidepoint(mp[0], mp[1]):
             registry["toolFunc"] = line
-            registry["toolName"] = "Line"
+            registry["toolName"] = "line"
             registry["toolArgs"]["updateOldPerTick"] = False
             for key, value in rectRegistry.items():
                 if key not in doNotUpdateOnReDraw or "back":
@@ -587,8 +621,56 @@ while running:
                 if key not in doNotUpdateOnReDraw:
                     rectRegistry[key][1] = GREEN
             rectRegistry["brushRect"][1] = RED
+        elif rectRegistry["stampOneRect"][0].collidepoint(mp[0], mp[1]):
+            # For the stamps, use a lambda to automatically pass the stamp number so that we don't need multiple stamp functions
+            registry["toolFunc"] = lambda pos, qregistry: stamp(1, pos, qregistry)
+            registry["toolName"] = "stampone"
+            registry["toolArgs"]["updateOldPerTick"] = False
+            for key, value in rectRegistry.items():
+                if key not in doNotUpdateOnReDraw:
+                    rectRegistry[key][1] = GREEN
+            rectRegistry["stampOneRect"][1] = RED
+        elif rectRegistry["stampTwoRect"][0].collidepoint(mp[0], mp[1]):
+            registry["toolFunc"] = lambda pos, qregistry: stamp(2, pos, qregistry)
+            registry["toolName"] = "stamptwo"
+            registry["toolArgs"]["updateOldPerTick"] = False
+            for key, value in rectRegistry.items():
+                if key not in doNotUpdateOnReDraw:
+                    rectRegistry[key][1] = GREEN
+            rectRegistry["stampTwoRect"][1] = RED
+        elif rectRegistry["stampThreeRect"][0].collidepoint(mp[0], mp[1]):
+            registry["toolFunc"] = lambda pos, qregistry: stamp(3, pos, qregistry)
+            registry["toolName"] = "stampthree"
+            registry["toolArgs"]["updateOldPerTick"] = False
+            for key, value in rectRegistry.items():
+                if key not in doNotUpdateOnReDraw:
+                    rectRegistry[key][1] = GREEN
+            rectRegistry["stampThreeRect"][1] = RED
+        elif rectRegistry["stampFourRect"][0].collidepoint(mp[0], mp[1]):
+            registry["toolFunc"] = lambda pos, qregistry: stamp(4, pos, qregistry)
+            registry["toolName"] = "stampfour"
+            registry["toolArgs"]["updateOldPerTick"] = False
+            for key, value in rectRegistry.items():
+                if key not in doNotUpdateOnReDraw:
+                    rectRegistry[key][1] = GREEN
+            rectRegistry["stampFourRect"][1] = RED
+        elif rectRegistry["stampFiveRect"][0].collidepoint(mp[0], mp[1]):
+            registry["toolFunc"] = lambda pos, qregistry: stamp(5, pos, qregistry)
+            registry["toolName"] = "stampfive"
+            registry["toolArgs"]["updateOldPerTick"] = False
+            for key, value in rectRegistry.items():
+                if key not in doNotUpdateOnReDraw:
+                    rectRegistry[key][1] = GREEN
+            rectRegistry["stampFiveRect"][1] = RED
+        elif rectRegistry["stampSixRect"][0].collidepoint(mp[0], mp[1]):
+            registry["toolFunc"] = lambda pos, qregistry: stamp(6, pos, qregistry)
+            registry["toolName"] = "stampsix"
+            registry["toolArgs"]["updateOldPerTick"] = False
+            for key, value in rectRegistry.items():
+                if key not in doNotUpdateOnReDraw:
+                    rectRegistry[key][1] = GREEN
+            rectRegistry["stampSixRect"][1] = RED
         elif clearRect.collidepoint(mp[0], mp[1]):
-            print("hello!")
             canvasSurface.fill(registry["backgroundColour"])
             needToSave = True
             undoList.append(canvasSurface.copy())
@@ -627,6 +709,17 @@ while running:
         # was. So that we can get a start point for shape tools
         dragStart = convertToCanvas(mp)
         lastTickLocation = convertToCanvas(mp)
+
+    # Tooltips
+    rectRegistryAndStatic = rectRegistry.copy()
+    rectRegistryAndStatic.update({"clearRect": [clearRect], "saveRect": [saveRect], "openRect": [openRect]})
+    for rectName, rectData in rectRegistryAndStatic.items():
+        if rectData[0].collidepoint(mp[0], mp[1]):
+            if rectName in config["tooltips"]:
+                tipText = tipFont.render(config["tooltips"][rectName], True, WHITE)
+                tipRect = Rect(mp[0], mp[1]-tipText.get_height(), tipText.get_width()+10, tipText.get_height())
+                draw.rect(screen, BLACK, tipRect)
+                screen.blit(tipText, (mp[0]+5, mp[1]-tipText.get_height()-2))
 
     # Draw the cropped surface onto the canvas after the tool is let go
     if cropSurface and not tooling:

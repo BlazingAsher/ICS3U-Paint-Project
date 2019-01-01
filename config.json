@@ -1,54 +1,94 @@
 {
   "title": "Microsoft Paint",
   "backgroundImage": "images/background.jpg",
-  "canvasLocation": [150, 80],
+  "canvasLocation": [150, 180],
   "canvasSize": [700, 500],
   "screenSize": [1080, 768],
   "paletteImage": "images/colpal.png",
   "paletteSize": [200, 200],
-  "paletteLocation": [865, 80],
+  "paletteLocation": [865, 180],
+  "stamp1Loc": "images/stampone.png",
+  "stamp2Loc": "images/stampone.png",
+  "stamp3Loc": "images/stampone.png",
+  "stamp4Loc": "images/stampone.png",
+  "stamp5Loc": "images/stampone.png",
+  "stamp6Loc": "images/stampone.png",
   "rects": {
    "colourDisplayRect":[
-      [865, 300, 50, 50], "WHITE", 0
+      [865, 400, 50, 50], "WHITE", 0
    ],
     "backColourDisplayRect":[
-      [915, 300, 50, 50], "WHITE", 0
+      [915, 400, 50, 50], "WHITE", 0
    ],
    "pencilRect":[
-      [20, 80, 40, 40], "GREEN", 2
+      [20, 180, 40, 40], "GREEN", 2
    ],
    "eraserRect":[
-      [70,80,40,40],"GREEN", 2
+      [70,180,40,40],"GREEN", 2
    ],
    "shapeRectRect":[
-     [20,170,40,40],"GREEN", 2
+     [20,270,40,40],"GREEN", 2
    ],
    "shapeEllipseRect":[
-     [70,170,40,40],"GREEN", 2
+     [70,270,40,40],"GREEN", 2
    ],
    "lineRect":[
-     [20,260,40,40],"GREEN", 2
+     [20,360,40,40],"GREEN", 2
    ],
    "airbrushRect":[
-     [70,260,40,40],"GREEN", 2
+     [70,360,40,40],"GREEN", 2
    ],
    "bucketRect":[
-     [20,350,40,40],"GREEN", 2
+     [20,450,40,40],"GREEN", 2
    ],
    "cropRect":[
-     [70,350,40,40],"GREEN", 2
+     [70,450,40,40],"GREEN", 2
    ],
    "brushRect":[
-     [20,440,40,40],"GREEN", 2
+     [20,540,40,40],"GREEN", 2
    ],
+    "stampOneRect":[
+      [245,715,40,40],"GREEN", 2
+    ],
+    "stampTwoRect":[
+      [295,715,40,40],"GREEN", 2
+    ],
+    "stampThreeRect":[
+      [345,715,40,40],"GREEN", 2
+    ],
+    "stampFourRect":[
+      [395,715,40,40],"GREEN", 2
+    ],
+    "stampFiveRect":[
+      [445,715,40,40],"GREEN", 2
+    ],
+    "stampSixRect":[
+      [495,715,40,40],"GREEN", 2
+    ],
     "openRect":[
-     [865, 500, 50, 50],"GREEN", 2
+     [865, 600, 50, 50],"GREEN", 2
    ],
     "saveRect":[
-     [935, 500, 50, 50],"GREEN", 2
+     [935, 600, 50, 50],"GREEN", 2
    ],
     "clearRect":[
-     [865, 400, 50, 50],"GREEN", 2
+     [865, 500, 50, 50],"GREEN", 2
    ]
-}
+},
+  "tooltips": {
+    "pencilRect": "Pencil",
+    "eraserRect": "Eraser",
+    "shapeRectRect": "Rectangle Tool",
+    "shapeEllipseRect": "Ellipse Tool",
+    "lineRect": "Line Tool",
+    "airbrushRect": "Airbrush",
+    "bucketRect": "Paint Bucket",
+    "cropRect": "Crop",
+    "brushRect": "Paint Brush",
+    "openRect": "Open File",
+    "saveRect": "Save File",
+    "clearRect": "Clear Canvas",
+    "colourDisplayRect": "Foreground Colour",
+    "backColourDisplayRect": "Background Colour"
+  }
 }
