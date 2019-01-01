@@ -14,39 +14,39 @@
   "stamp5Loc": "images/stampone.png",
   "stamp6Loc": "images/stampone.png",
   "rects": {
-   "colourDisplayRect":[
+    "colourDisplayRect":[
       [865, 400, 50, 50], "WHITE", 0
-   ],
+    ],
     "backColourDisplayRect":[
       [915, 400, 50, 50], "WHITE", 0
-   ],
-   "pencilRect":[
+    ],
+    "pencilRect":[
       [20, 180, 40, 40], "GREEN", 2
-   ],
-   "eraserRect":[
+    ],
+    "eraserRect":[
       [70,180,40,40],"GREEN", 2
-   ],
-   "shapeRectRect":[
-     [20,270,40,40],"GREEN", 2
-   ],
-   "shapeEllipseRect":[
-     [70,270,40,40],"GREEN", 2
-   ],
-   "lineRect":[
-     [20,360,40,40],"GREEN", 2
-   ],
-   "airbrushRect":[
-     [70,360,40,40],"GREEN", 2
-   ],
-   "bucketRect":[
-     [20,450,40,40],"GREEN", 2
-   ],
-   "cropRect":[
-     [70,450,40,40],"GREEN", 2
-   ],
-   "brushRect":[
-     [20,540,40,40],"GREEN", 2
-   ],
+    ],
+    "shapeRectRect":[
+      [20,270,40,40],"GREEN", 2
+    ],
+    "shapeEllipseRect":[
+      [70,270,40,40],"GREEN", 2
+    ],
+    "lineRect":[
+      [20,360,40,40],"GREEN", 2
+    ],
+    "airbrushRect":[
+      [70,360,40,40],"GREEN", 2
+    ],
+    "bucketRect":[
+      [20,450,40,40],"GREEN", 2
+     ],
+    "cropRect":[
+      [70,450,40,40],"GREEN", 2
+    ],
+    "brushRect":[
+      [20,540,40,40],"GREEN", 2
+    ],
     "stampOneRect":[
       [245,715,40,40],"GREEN", 2
     ],
@@ -66,15 +66,15 @@
       [495,715,40,40],"GREEN", 2
     ],
     "openRect":[
-     [865, 600, 50, 50],"GREEN", 2
-   ],
+      [865, 600, 50, 50],"GREEN", 2
+    ],
     "saveRect":[
-     [935, 600, 50, 50],"GREEN", 2
-   ],
+      [935, 600, 50, 50],"GREEN", 2
+     ],
     "clearRect":[
-     [865, 500, 50, 50],"GREEN", 2
-   ]
-},
+      [865, 500, 50, 50],"GREEN", 2
+    ]
+  },
   "tooltips": {
     "pencilRect": "Pencil",
     "eraserRect": "Eraser",
