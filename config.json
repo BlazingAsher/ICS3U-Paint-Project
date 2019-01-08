@@ -47,6 +47,9 @@
     "brushRect":[
       [20,540,40,40],"GREEN", 2
     ],
+    "polygonRect":[
+      [70,540,40,40],"GREEN", 2
+    ],
     "stampOneRect":[
       [245,715,40,40],"GREEN", 2
     ],
@@ -85,6 +88,7 @@
     "bucketRect": "Paint Bucket",
     "cropRect": "Crop",
     "brushRect": "Paint Brush",
+    "polygonRect": "Polygon Tool",
     "openRect": "Open File",
     "saveRect": "Save File",
     "clearRect": "Clear Canvas",

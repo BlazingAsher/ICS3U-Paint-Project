@@ -78,7 +78,7 @@ cropSurface = None
 # Whether a tool is currently engaged
 tooling = False
 # Tools that will only be executed if the dragging started over the canvas
-mustBeOverCanvas = ["bucket", "crop", "brush", "stampone", "stamptwo", "stampthree", "stampfour", "stampfive", "stampsix"]
+mustBeOverCanvas = ["bucket", "crop", "brush", "polygon", "stampone", "stamptwo", "stampthree", "stampfour", "stampfive", "stampsix"]
 # Rectangles whose colours will not be updated by the loop
 doNotUpdateOnReDraw = ["colourDisplayRect", "backDisplayRect"]
 # List of surfaces to undo and redo
@@ -101,6 +101,9 @@ musicRegistry = {"playing": "", "queue": [], "played": [], "loop": False, "loopP
 # 1 - Random
 # 2 - By filename
 
+# Stores info for the polygon tool
+polygonRegistry = {}
+
 # Defines the canvas surface and fills it with white
 canvasSurface = Surface(canvasSize)
 canvasSurface.fill(WHITE)
@@ -113,6 +116,12 @@ musicList = []
 
 # Whether to fills shapes
 shapeFilled = False
+
+# If the polygon tool is currently being ued
+onPolygon = False
+
+# If a point was drawn and the mouse has not been released yet
+pointDrawLock = False
 
 # Rate limits tools such as air brush
 toolDelay = ptime.time()
@@ -139,6 +148,7 @@ rectRegistry = {"colourDisplayRect": [Rect(config["rects"]["colourDisplayRect"][
                 "bucketRect": [Rect(config["rects"]["bucketRect"][0]), eval(config["rects"]["bucketRect"][1]), config["rects"]["bucketRect"][2]],
                 "cropRect": [Rect(config["rects"]["cropRect"][0]), eval(config["rects"]["cropRect"][1]), config["rects"]["cropRect"][2]],
                 "brushRect": [Rect(config["rects"]["brushRect"][0]), eval(config["rects"]["brushRect"][1]), config["rects"]["brushRect"][2]],
+                "polygonRect": [Rect(config["rects"]["polygonRect"][0]), eval(config["rects"]["polygonRect"][1]), config["rects"]["polygonRect"][2]],
                 "stampOneRect": [Rect(config["rects"]["stampOneRect"][0]), eval(config["rects"]["stampOneRect"][1]), config["rects"]["stampOneRect"][2]],
                 "stampTwoRect": [Rect(config["rects"]["stampTwoRect"][0]), eval(config["rects"]["stampTwoRect"][1]), config["rects"]["stampTwoRect"][2]],
                 "stampThreeRect": [Rect(config["rects"]["stampThreeRect"][0]), eval(config["rects"]["stampThreeRect"][1]), config["rects"]["stampThreeRect"][2]],
@@ -454,6 +464,52 @@ def stamp(id, mpos, lregistry):
 def eyeDropper(mpos, lregistry):
     return canvasSurface.get_at(mpos)
 
+def polygon(mpos, lregistry):
+    global polygonRegistry, onPolygon, toolDelay, pointDrawLock, undoList
+    # If the tool is currently not engaged, set it up for first use
+    if not onPolygon:
+        # Get the start point, so that we can check when the user is finished
+        polygonRegistry["startPoint"] = mpos
+        # Store the last point that the user clicked so that we can make the outline
+        polygonRegistry["lastPoint"] = mpos
+        # Store the points of the polygon
+        polygonRegistry["points"] = []
+        # Make a copy of the old surface so that the guides are not saved
+        polygonRegistry["oldSurface"] = canvasSurface.copy()
+
+    # If the mouse overlaps the circle area of the starting point, the cursor has been rleased since the last point, and the tool is activated, it means the polygon is finished
+    if ((polygonRegistry["startPoint"][0]-mpos[0])**2 + (polygonRegistry["startPoint"][1]-mpos[1])**2)**0.5 < 5 and len(polygonRegistry["points"]) > 2 and onPolygon and not pointDrawLock:
+        # Mark tool as disabled
+        onPolygon = False
+        smartLog("Polygon finished", 3)
+        # Blit the original surface
+        canvasSurface.blit(polygonRegistry["oldSurface"], (0,0))
+        # Draw the polygon
+        draw.polygon(canvasSurface, lregistry["toolColour"], polygonRegistry["points"])
+        # Add to the undo list
+        undoList.append(canvasSurface.copy())
+        # Clear the registry
+        polygonRegistry = {}
+        # Inform the caller that the surface has been modified
+        return True
+    else:
+        # Check that the mouse has been released since the lasft point
+        if not pointDrawLock:
+            print("draw")
+            # Mark the tool as activated
+            onPolygon = True
+            # Draw a guide circle
+            draw.circle(canvasSurface, lregistry["toolColour"], mpos, 5)
+            # Draw a side of th polygon
+            draw.line(canvasSurface, lregistry["toolColour"], polygonRegistry["lastPoint"], mpos)
+            polygonRegistry["points"].append(mpos)
+            polygonRegistry["lastPoint"] = mpos
+            # Only execute after the mouse is released
+            pointDrawLock = True
+        # Since we are drwaing guides, do not inform the caller that the surface has been modified
+        return False
+
+
 # Initialize the registry
 registry = {"toolName": "nothing", "toolFunc": nothing, "toolArgs": {"updateOldPerTick": False},
             "toolColour": (255, 255, 255), "toolThickness": 2, "backgroundColour": (255, 255, 255)}
@@ -471,6 +527,12 @@ while running:
                 canvasRe = ""
             if evt.key == K_c:
                 smartLog("COLOUR: "+str(screen.get_at(mp)) + " "+ str(canvasSurface.get_at(convertToCanvas(mp))), 3)
+            if evt.key == K_ESCAPE:
+                # Cancel the polygon drawing process
+                if onPolygon:
+                    onPolygon = False
+                    canvasSurface.blit(polygonRegistry["oldSurface"], (0,0))
+                    polygonRegistry = {}
             if evt.key == K_u:
                 if len(undoList) > 1:
                     redoList.append(undoList.pop())
@@ -491,6 +553,7 @@ while running:
                 registry["toolThickness"] -= 1 if registry["toolThickness"] > 1 else 0
         if evt.type == MOUSEBUTTONUP:
             tooling = False
+            pointDrawLock = False
             smartLog("TOOL STATUS: %s"%toolStatus, 3)
             # Undo logic:
             if ((canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and registry["toolName"] != "nothing") or
@@ -546,7 +609,7 @@ while running:
 
     # Check if the cursor was drawing and did not release
     # Check if the cursor has clicked on a tool button
-    if mb[0] and not tooling and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]):
+    if mb[0] and not tooling and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and not onPolygon:
         # Set the toolFunc in the registry to be the tool that was chosen, and whether the starting pos will be
         # updated per tick and update the colour of the rectangle to show selected
         if rectRegistry["pencilRect"][0].collidepoint(mp[0], mp[1]):
@@ -621,6 +684,14 @@ while running:
                 if key not in doNotUpdateOnReDraw:
                     rectRegistry[key][1] = GREEN
             rectRegistry["brushRect"][1] = RED
+        elif rectRegistry["polygonRect"][0].collidepoint(mp[0], mp[1]):
+            registry["toolFunc"] = polygon
+            registry["toolName"] = "polygon"
+            registry["toolArgs"]["updateOldPerTick"] = False
+            for key, value in rectRegistry.items():
+                if key not in doNotUpdateOnReDraw:
+                    rectRegistry[key][1] = GREEN
+            rectRegistry["polygonRect"][1] = RED
         elif rectRegistry["stampOneRect"][0].collidepoint(mp[0], mp[1]):
             # For the stamps, use a lambda to automatically pass the stamp number so that we don't need multiple stamp functions
             registry["toolFunc"] = lambda pos, qregistry: stamp(1, pos, qregistry)
@@ -682,14 +753,14 @@ while running:
 
     # Check if the mouse is over the colour wheel and a tool is currently not being used
     if mb[0] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]):
-        if palRect.collidepoint(mp[0], mp[1])  and ((mp[0]-palRect.centerx)**2 + (mp[1]-palRect.centery)**2)**0.5 < 101:
+        if palRect.collidepoint(mp[0], mp[1])  and ((mp[0]-palRect.centerx)**2 + (mp[1]-palRect.centery)**2)**0.5 < 101 and not onPolygon:
             # Get the colour and the point
             registry["toolColour"] = screen.get_at((mp[0], mp[1]))
 
     # Check if the mouse is over the colour wheel and a tool is currently not being used
     if mb[2] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]):
         if palRect.collidepoint(mp[0], mp[1]) and (
-                (mp[0] - palRect.centerx) ** 2 + (mp[1] - palRect.centery) ** 2) ** 0.5 < 101:
+                (mp[0] - palRect.centerx) ** 2 + (mp[1] - palRect.centery) ** 2) ** 0.5 < 101 and not onPolygon:
             # Get the colour and the point
             registry["backgroundColour"] = screen.get_at((mp[0], mp[1]))
 
@@ -698,6 +769,7 @@ while running:
         # Execute the tool function, checking if the drag must start on the canvas
         if not registry["toolName"] in mustBeOverCanvas or canvasRect.collidepoint(mp[0], mp[1]):
             toolStatus = registry["toolFunc"](convertToCanvas(mp), registry)
+            smartLog("JUST FINISHED TOOL STATUS %s"%toolStatus, 3)
             screen.blit(canvasSurface, canvasLoc)
         toolDelay = ptime.time()
 
