@@ -7,7 +7,7 @@
   "paletteImage": "images/colpal.png",
   "paletteSize": [200, 200],
   "paletteLocation": [865, 180],
-  "stamp1Loc": "images/stampone.png",
+  "stamp1Loc": "images/background.jpg",
   "stamp2Loc": "images/stampone.png",
   "stamp3Loc": "images/stampone.png",
   "stamp4Loc": "images/stampone.png",
@@ -21,61 +21,61 @@
       [915, 400, 50, 50], "WHITE", 0
     ],
     "pencilRect":[
-      [20, 180, 40, 40], "GREEN", 2
+      [20, 180, 40, 40], "GREEN", 2, "images/tool.png"
     ],
     "eraserRect":[
-      [70,180,40,40],"GREEN", 2
+      [70,180,40,40],"GREEN", 2, "images/tool.png"
     ],
     "shapeRectRect":[
-      [20,270,40,40],"GREEN", 2
+      [20,270,40,40],"GREEN", 2, "images/tool.png"
     ],
     "shapeEllipseRect":[
-      [70,270,40,40],"GREEN", 2
+      [70,270,40,40],"GREEN", 2, "images/tool.png"
     ],
     "lineRect":[
-      [20,360,40,40],"GREEN", 2
+      [20,360,40,40],"GREEN", 2, "images/tool.png"
     ],
     "airbrushRect":[
-      [70,360,40,40],"GREEN", 2
+      [70,360,40,40],"GREEN", 2, "images/tool.png"
     ],
     "bucketRect":[
-      [20,450,40,40],"GREEN", 2
+      [20,450,40,40],"GREEN", 2, "images/tool.png"
      ],
     "cropRect":[
-      [70,450,40,40],"GREEN", 2
+      [70,450,40,40],"GREEN", 2, "images/tool.png"
     ],
     "brushRect":[
-      [20,540,40,40],"GREEN", 2
+      [20,540,40,40],"GREEN", 2, "images/tool.png"
     ],
     "polygonRect":[
-      [70,540,40,40],"GREEN", 2
+      [70,540,40,40],"GREEN", 2, "images/tool.png"
     ],
     "stampOneRect":[
-      [245,715,40,40],"GREEN", 2
+      [245,715,40,40],"GREEN", 2, "images/tool.png"
     ],
     "stampTwoRect":[
-      [295,715,40,40],"GREEN", 2
+      [295,715,40,40],"GREEN", 2, "images/tool.png"
     ],
     "stampThreeRect":[
-      [345,715,40,40],"GREEN", 2
+      [345,715,40,40],"GREEN", 2, "images/tool.png"
     ],
     "stampFourRect":[
-      [395,715,40,40],"GREEN", 2
+      [395,715,40,40],"GREEN", 2, "images/tool.png"
     ],
     "stampFiveRect":[
-      [445,715,40,40],"GREEN", 2
+      [445,715,40,40],"GREEN", 2, "images/tool.png"
     ],
     "stampSixRect":[
-      [495,715,40,40],"GREEN", 2
+      [495,715,40,40],"GREEN", 2, "images/tool.png"
     ],
     "openRect":[
-      [865, 600, 50, 50],"GREEN", 2
+      [865, 600, 50, 50],"GREEN", 2, "images/tool.png"
     ],
     "saveRect":[
-      [935, 600, 50, 50],"GREEN", 2
+      [935, 600, 50, 50],"GREEN", 2, "images/tool.png"
      ],
     "clearRect":[
-      [865, 500, 50, 50],"GREEN", 2
+      [865, 500, 50, 50],"GREEN", 2, "images/tool.png"
     ]
   },
   "tooltips": {

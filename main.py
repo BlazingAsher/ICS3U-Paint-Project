@@ -478,7 +478,7 @@ def polygon(mpos, lregistry):
         polygonRegistry["oldSurface"] = canvasSurface.copy()
 
     # If the mouse overlaps the circle area of the starting point, the cursor has been rleased since the last point, and the tool is activated, it means the polygon is finished
-    if ((polygonRegistry["startPoint"][0]-mpos[0])**2 + (polygonRegistry["startPoint"][1]-mpos[1])**2)**0.5 < 5 and len(polygonRegistry["points"]) > 2 and onPolygon and not pointDrawLock:
+    if ((polygonRegistry["startPoint"][0]-mpos[0])**2 + (polygonRegistry["startPoint"][1]-mpos[1])**2)**0.5 < 10 and len(polygonRegistry["points"]) > 2 and onPolygon and not pointDrawLock:
         # Mark tool as disabled
         onPolygon = False
         smartLog("Polygon finished", 3)
@@ -498,10 +498,12 @@ def polygon(mpos, lregistry):
             print("draw")
             # Mark the tool as activated
             onPolygon = True
+            # Draw a side of the polygon
+            draw.line(canvasSurface, BLACK, polygonRegistry["lastPoint"], mpos, 3)
             # Draw a guide circle
-            draw.circle(canvasSurface, lregistry["toolColour"], mpos, 5)
-            # Draw a side of th polygon
-            draw.line(canvasSurface, lregistry["toolColour"], polygonRegistry["lastPoint"], mpos)
+            draw.circle(canvasSurface, RED, mpos, 10)
+            # Draw another guide circle to cover the line
+            draw.circle(canvasSurface, RED, polygonRegistry["lastPoint"], 10)
             polygonRegistry["points"].append(mpos)
             polygonRegistry["lastPoint"] = mpos
             # Only execute after the mouse is released
@@ -596,6 +598,10 @@ while running:
     # Draw rects
     for key, rectArray in rectRegistry.items():
         draw.rect(screen, rectArray[1], rectArray[0], rectArray[2])
+        if key in config["rects"] and len(config["rects"][key]) > 3:
+            icon = image.load(config["rects"][key][3])
+            iconResize = transform.smoothscale(icon, (rectArray[0][2]-10, rectArray[0][3]-10))
+            screen.blit(iconResize, (rectArray[0][0]+5, rectArray[0][1]+5))
     draw.rect(screen, WHITE, clearRect)
     draw.rect(screen, WHITE, openRect)
     draw.rect(screen, WHITE, saveRect)
