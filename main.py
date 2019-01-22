@@ -80,7 +80,7 @@ tooling = False
 # Tools that will only be executed if the dragging started over the canvas
 mustBeOverCanvas = ["bucket", "crop", "brush", "polygon", "stampone", "stamptwo", "stampthree", "stampfour", "stampfive", "stampsix"]
 # Rectangles whose colours will not be updated by the loop
-doNotUpdateOnReDraw = ["colourDisplayRect", "backDisplayRect"]
+doNotUpdateOnReDraw = ["colourDisplayRect", "backDisplayRect", "volIndicatorRect"]
 # List of surfaces to undo and redo
 undoList = []
 redoList = []
@@ -94,12 +94,7 @@ needToSave = False
 canvasSize = (700,  500)
 
 # Stores settings for the music player
-musicRegistry = {"playing": "", "queue": [], "played": [], "loop": False, "loopPlaylist": False, "playMode": 0}
-# Play mode:
-# Float - paused and location
-# 0 - Do not auto play next
-# 1 - Random
-# 2 - By filename
+musicRegistry = {"playing": -1, "queue": ["music/01.ogg","music/02.ogg", "music/Kalimba.mp3"], "loop": False, "paused": False, "volume": 1.0}
 
 # Stores info for the polygon tool
 polygonRegistry = {}
@@ -149,6 +144,13 @@ rectRegistry = {"colourDisplayRect": [Rect(config["rects"]["colourDisplayRect"][
                 "cropRect": [Rect(config["rects"]["cropRect"][0]), eval(config["rects"]["cropRect"][1]), config["rects"]["cropRect"][2]],
                 "brushRect": [Rect(config["rects"]["brushRect"][0]), eval(config["rects"]["brushRect"][1]), config["rects"]["brushRect"][2]],
                 "polygonRect": [Rect(config["rects"]["polygonRect"][0]), eval(config["rects"]["polygonRect"][1]), config["rects"]["polygonRect"][2]],
+                "playPauseRect": [Rect(config["rects"]["playPauseRect"][0]), eval(config["rects"]["playPauseRect"][1]), config["rects"]["playPauseRect"][2]],
+                "stopRect": [Rect(config["rects"]["stopRect"][0]), eval(config["rects"]["stopRect"][1]), config["rects"]["stopRect"][2]],
+                "prevRect": [Rect(config["rects"]["prevRect"][0]), eval(config["rects"]["prevRect"][1]), config["rects"]["prevRect"][2]],
+                "nextRect": [Rect(config["rects"]["nextRect"][0]), eval(config["rects"]["nextRect"][1]), config["rects"]["nextRect"][2]],
+                "loopRect": [Rect(config["rects"]["loopRect"][0]), eval(config["rects"]["loopRect"][1]), config["rects"]["loopRect"][2]],
+                "helpRect": [Rect(config["rects"]["helpRect"][0]), eval(config["rects"]["helpRect"][1]), config["rects"]["helpRect"][2]],
+                "volIndicatorRect": [Rect(config["rects"]["volIndicatorRect"][0]), eval(config["rects"]["volIndicatorRect"][1]), config["rects"]["volIndicatorRect"][2]],
                 "stampOneRect": [Rect(config["rects"]["stampOneRect"][0]), eval(config["rects"]["stampOneRect"][1]), config["rects"]["stampOneRect"][2]],
                 "stampTwoRect": [Rect(config["rects"]["stampTwoRect"][0]), eval(config["rects"]["stampTwoRect"][1]), config["rects"]["stampTwoRect"][2]],
                 "stampThreeRect": [Rect(config["rects"]["stampThreeRect"][0]), eval(config["rects"]["stampThreeRect"][1]), config["rects"]["stampThreeRect"][2]],
@@ -162,6 +164,9 @@ palRect = Rect(config["paletteLocation"][0], config["paletteLocation"][1], confi
 canvasRect = Rect(config["canvasLocation"][0], config["canvasLocation"][1], config["canvasSize"][0], config["canvasSize"][1])
 # Define the rectangle to clear the canvas
 clearRect = Rect(config["rects"]["clearRect"][0])
+
+# Volume indicator collide rect
+volChooserRect = Rect(config["rects"]["volChooserRect"][0])
 
 # Define the open and save buttons
 openRect = Rect(config["rects"]["openRect"][0])
@@ -368,7 +373,7 @@ def line(mpos, lregistry):
     canvasSurface.blit(oldscreen, (0, 0))
 
     # Draw a line from the start of the click to the current position
-    draw.line(canvasSurface, lregistry["toolColour"], dragStart, mpos, lregistry["toolThickness"])
+    draw.line(canvasSurface, lregistry["toolColour"], dragStart, mpos, lregistry["toolThickness"] if lregistry["toolThickness"] < 6 else 5)
     return True
 
 
@@ -485,7 +490,14 @@ def polygon(mpos, lregistry):
         # Blit the original surface
         canvasSurface.blit(polygonRegistry["oldSurface"], (0,0))
         # Draw the polygon
-        draw.polygon(canvasSurface, lregistry["toolColour"], polygonRegistry["points"])
+        if shapeFilled:
+            draw.polygon(canvasSurface, lregistry["toolColour"], polygonRegistry["points"])
+        else:
+            for i in range(len(polygonRegistry["points"])):
+                try:
+                    draw.line(canvasSurface, lregistry["toolColour"], polygonRegistry["points"][i], polygonRegistry["points"][i+1], lregistry["toolThickness"] if lregistry["toolThickness"] < 6 else 5)
+                except IndexError:
+                    draw.line(canvasSurface, lregistry["toolColour"], polygonRegistry["points"][i], polygonRegistry["points"][0], lregistry["toolThickness"] if lregistry["toolThickness"] < 6 else 5)
         # Add to the undo list
         undoList.append(canvasSurface.copy())
         # Clear the registry
@@ -565,25 +577,17 @@ while running:
                 smartLog("LEN UNDOLIST %d"%len(undoList), 3)
         if evt.type == SONG_END:
             if musicRegistry["loop"]:
-                mixer.music.play(musicRegistry["playing"])
+                mixer.music.stop()
+                mixer.music.load(musicRegistry["queue"][musicRegistry["playing"]])
+                mixer.music.set_volume(musicRegistry["volume"])
+                mixer.music.play()
             else:
-                if musicRegistry["playMode"] == 1:
-                    musicName = choice(musicRegistry["queue"])
-                    while musicName not in musicRegistry["played"]:
-                        musicRegistry["playing"] = musicName
-                        mixer.music.play(musicName)
-                        musicRegistry["played"].append(musicName)
-                elif musicRegistry["playMode"] == 2:
-                    musicName = musicRegistry["playing"]
-                    pos = musicList.index(musicName)
-                    pos += 1 if pos + 1 < len(musicList) else 50000
-                    if pos < 10000:
-                        musicRegistry["playing"] = musicList[pos]
-                        mixer.music.play(musicName)
-                    elif musicRegistry["loopPlaylist"]:
-                        pos = 0
-                        musicRegistry["playing"] = musicList[pos]
-                        mixer.music.play(musicName)
+                musicRegistry["playing"] = musicRegistry["playing"] + 1 if musicRegistry["playing"] < len(musicRegistry["queue"])-1 else 0
+                mixer.music.stop()
+                mixer.music.load(musicRegistry["queue"][musicRegistry["playing"]])
+                mixer.music.set_volume(musicRegistry["volume"])
+                mixer.music.play()
+
     toolStatus = False
 
     # Sync the colour showing rect's colour in the rectRegistry to the tool colour
@@ -595,23 +599,53 @@ while running:
     screen.blit(palPic, config["paletteLocation"])
     screen.blit(canvasSurface, canvasLoc)
 
+    draw.rect(screen, (175, 175, 175), (0, 0, width, 60))
+    volChooserImage = image.load(config["rects"]["volChooserRect"][3])
+    volChooserImage = transform.smoothscale(volChooserImage, (volChooserRect.width, volChooserRect.height))
+    screen.blit(volChooserImage, volChooserRect.topleft)
+    musicFileNameText = infoFont.render("Playing - " + musicRegistry["queue"][musicRegistry["playing"]][6:musicRegistry["queue"][musicRegistry["playing"]].rfind(".")] + " - " + str(int(5 * round(musicRegistry["volume"]*100/5))) + "% volume" if musicRegistry["playing"] != -1 else "Nothing is playing", True, WHITE)
+    screen.blit(musicFileNameText, (volChooserRect.right+30, volChooserRect[1]))
+
+    toolDescText = infoFont.render("{0}: {1}".format(config["descriptions"][registry["toolName"]][0], config["descriptions"][registry["toolName"]][1]), True, WHITE)
+    screen.blit(toolDescText, (20, 100))
+
     # Draw rects
     for key, rectArray in rectRegistry.items():
         draw.rect(screen, rectArray[1], rectArray[0], rectArray[2])
         if key in config["rects"] and len(config["rects"][key]) > 3:
-            icon = image.load(config["rects"][key][3])
-            iconResize = transform.smoothscale(icon, (rectArray[0][2]-10, rectArray[0][3]-10))
-            screen.blit(iconResize, (rectArray[0][0]+5, rectArray[0][1]+5))
-    draw.rect(screen, WHITE, clearRect)
-    draw.rect(screen, WHITE, openRect)
-    draw.rect(screen, WHITE, saveRect)
+
+            if key == "loopRect" and musicRegistry["loop"]:
+                icon = image.load(config["rects"][key][4])
+            else:
+                icon = image.load(config["rects"][key][3])
+            icon = transform.smoothscale(icon, (rectArray[0][2]-10, rectArray[0][3]-10))
+            screen.blit(icon, (rectArray[0][0]+5, rectArray[0][1]+5))
+    #draw.rect(screen, WHITE, clearRect)
+    icon = image.load(config["rects"]["clearRect"][3])
+    icon = transform.smoothscale(icon, (clearRect.width, clearRect.height))
+    screen.blit(icon, clearRect.topleft)
+
+    #draw.rect(screen, WHITE, openRect)
+    icon = image.load(config["rects"]["openRect"][3])
+    icon = transform.smoothscale(icon, (openRect.width, openRect.height))
+    screen.blit(icon, openRect.topleft)
+
+    #draw.rect(screen, WHITE, saveRect)
+    icon = image.load(config["rects"]["saveRect"][3])
+    icon = transform.smoothscale(icon, (saveRect.width, saveRect.height))
+    screen.blit(icon, saveRect.topleft)
+
 
     # Draw text
     # Mouse location
     # Draw 0, 0 if the mouse is not over the canvas, otherwise convert mouse pos in global context to canvas context
-    txtMouseLoc = eval("infoFont.render(\"X: {0}  Y: {1}\".format"+str(convertToCanvas(mp) if canvasRect.collidepoint(mp[0], mp[1]) else (0,0))+", True, WHITE)")
-    #txtMouseLoc = infoFont.render("X: {0}  Y:{1}".format(mp[0], mp[1]), True, WHITE)
+    #txtMouseLoc = eval("infoFont.render(\"X: {0}  Y: {1}\".format"+str(convertToCanvas(mp) if canvasRect.collidepoint(mp[0], mp[1]) else (0,0))+", True, WHITE)")
+
+    txtMouseLoc = infoFont.render("X: {0}  Y:{1}".format(mp[0], mp[1]), True, WHITE)
     screen.blit(txtMouseLoc, (20, height-50))
+
+    txtThickness = infoFont.render("Thickness: {0}".format(registry["toolThickness"]), True, WHITE)
+    screen.blit(txtThickness, (20, height-75))
 
     # Check if the cursor was drawing and did not release
     # Check if the cursor has clicked on a tool button
@@ -756,6 +790,48 @@ while running:
             openFile(registry)
         elif saveRect.collidepoint(mp[0], mp[1]):
             saveFile()
+        elif rectRegistry["playPauseRect"][0].collidepoint(mp[0], mp[1]):
+            if musicRegistry["playing"] == -1:
+                musicRegistry["playing"] = 0
+                mixer.music.load(musicRegistry["queue"][musicRegistry["playing"]])
+                mixer.music.play()
+            else:
+                smartLog("Mixer busy: %s"%mixer.music.get_busy(), 3)
+                if musicRegistry["paused"]:
+                    mixer.music.unpause()
+                    musicRegistry["paused"] = False
+                else:
+                    mixer.music.pause()
+                    musicRegistry["paused"] = True
+            smartLog("playpause", 3)
+        elif rectRegistry["stopRect"][0].collidepoint(mp[0], mp[1]):
+            musicRegistry["playing"] = -1
+            musicRegistry["paused"] = False
+            mixer.music.stop()
+        elif rectRegistry["prevRect"][0].collidepoint(mp[0], mp[1]):
+            musicRegistry["playing"] = musicRegistry["playing"] - 1 if musicRegistry["playing"] > 0 else len(musicRegistry["queue"])-1
+            mixer.music.stop()
+            mixer.music.load(musicRegistry["queue"][musicRegistry["playing"]])
+            mixer.music.set_volume(musicRegistry["volume"])
+            mixer.music.play()
+        elif rectRegistry["nextRect"][0].collidepoint(mp[0], mp[1]):
+            musicRegistry["playing"] = musicRegistry["playing"] + 1 if musicRegistry["playing"] < len(musicRegistry["queue"])-1 else 0
+            mixer.music.stop()
+            mixer.music.load(musicRegistry["queue"][musicRegistry["playing"]])
+            mixer.music.set_volume(musicRegistry["volume"])
+            mixer.music.play()
+        elif rectRegistry["loopRect"][0].collidepoint(mp[0], mp[1]):
+            musicRegistry["loop"] = not musicRegistry["loop"]
+
+    if volChooserRect.collidepoint(mp[0], mp[1]) and mb[0]:
+        leftMost = config["rects"]["volIndicatorRect"][0][0] - 150
+        rectRegistry["volIndicatorRect"][0][0] = mp[0] if leftMost-1 < mp[0] < config["rects"]["volIndicatorRect"][0][0]+1 else config["rects"]["volIndicatorRect"][0][0] if mp[0] > config["rects"]["volIndicatorRect"][0][0] else leftMost
+        musicRegistry["volume"] = (rectRegistry["volIndicatorRect"][0][0] - leftMost)/150
+        mixer.music.set_volume(musicRegistry["volume"])
+    for key, checkRect in rectRegistry.items():
+        if key not in ["colourDisplayRect", "backgroundColourDisplayRect", "volIndicatorRect"]:
+            if checkRect[0].collidepoint(mp[0], mp[1]):
+                draw.rect(screen, RED, checkRect[0], checkRect[2])
 
     # Check if the mouse is over the colour wheel and a tool is currently not being used
     if mb[0] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]):

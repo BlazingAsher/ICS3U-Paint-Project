@@ -69,13 +69,37 @@
       [495,715,40,40],"GREEN", 2, "images/tool.png"
     ],
     "openRect":[
-      [865, 600, 50, 50],"GREEN", 2, "images/tool.png"
+      [946, 10, 40, 40],"GREEN", 2, "images/tool.png"
     ],
     "saveRect":[
-      [935, 600, 50, 50],"GREEN", 2, "images/tool.png"
+      [1010, 10, 40, 40],"GREEN", 2, "images/tool.png"
      ],
     "clearRect":[
       [865, 500, 50, 50],"GREEN", 2, "images/tool.png"
+    ],
+    "prevRect": [
+      [10, 10, 40, 40],"GREEN", 2, "images/tool.png"
+    ],
+    "playPauseRect": [
+      [60, 10, 40, 40],"GREEN", 2, "images/tool.png"
+    ],
+    "stopRect": [
+      [110, 10, 40, 40],"GREEN", 2, "images/tool.png"
+    ],
+    "nextRect": [
+      [160, 10, 40, 40],"GREEN", 2, "images/tool.png"
+    ],
+    "loopRect": [
+      [230, 10, 40, 40],"GREEN", 2, "images/tool.png", "images/background.jpg"
+    ],
+    "volChooserRect": [
+      [290, 15, 200, 30],"GREEN", 2, "images/volchooser.png"
+    ],
+    "volIndicatorRect": [
+      [475, 15, 10, 30],"BLACK", 0
+    ],
+    "helpRect": [
+      [865, 610, 50, 50],"GREEN", 2, "images/tool.png"
     ]
   },
   "tooltips": {
@@ -93,6 +117,33 @@
     "saveRect": "Save File",
     "clearRect": "Clear Canvas",
     "colourDisplayRect": "Foreground Colour",
-    "backColourDisplayRect": "Background Colour"
+    "backColourDisplayRect": "Background Colour",
+    "playPauseRect": "Play/Pause",
+    "stopRect": "Stop",
+    "prevRect": "Previous",
+    "nextRect": "Next",
+    "loopRect": "Loop",
+    "helpRect": "Help",
+    "volUpRect": "Vol Up",
+    "volDownRect": "Vol Down"
+  },
+  "descriptions": {
+    "nothing": ["Nothing", "Select a tool!"],
+    "pencil": ["Pencil", "Draw simple shapes"],
+    "airbrush": ["Air Brush", "Sprays paint based on the time you hold"],
+    "line": ["Line Tool", "Draw lines"],
+    "polygon": ["Polygon Tool", "Draw polygons"],
+    "eraser": ["Eraser", "Erase mistakes"],
+    "shaperect": ["Rectangle Tool", "Draw rectangles"],
+    "shapeellipse": ["Ellipse Tool", "Draw ellipses"],
+    "bucket": ["Bucket", "Fill a contained area"],
+    "brush": ["Brush", "Create intricate drawings"],
+    "crop": ["Crop", "Save only the pixels within an area"],
+    "stampone": ["Stamp One", "Stamp One"],
+    "stamptwo": ["Stamp One", "Stamp One"],
+    "stampthree": ["Stamp One", "Stamp One"],
+    "stampfour": ["Stamp One", "Stamp One"],
+    "stampfive": ["Stamp One", "Stamp One"],
+    "stampsix": ["Stamp One", "Stamp One"]
   }
 }
