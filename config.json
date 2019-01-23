@@ -75,7 +75,7 @@
       [1010, 10, 40, 40],"GREEN", 2, "images/tool.png"
      ],
     "clearRect":[
-      [865, 500, 50, 50],"GREEN", 2, "images/tool.png"
+      [882, 10, 40, 40],"GREEN", 2, "images/tool.png"
     ],
     "prevRect": [
       [10, 10, 40, 40],"GREEN", 2, "images/tool.png"
@@ -100,32 +100,35 @@
     ],
     "helpRect": [
       [865, 610, 50, 50],"GREEN", 2, "images/tool.png"
+    ],
+    "toggleFilledRect": [
+      [935, 610, 50, 50], "GREEN", 2, "images/tool.png", "images/background.jpg"
     ]
   },
   "tooltips": {
-    "pencilRect": "Pencil",
-    "eraserRect": "Eraser",
-    "shapeRectRect": "Rectangle Tool",
-    "shapeEllipseRect": "Ellipse Tool",
-    "lineRect": "Line Tool",
-    "airbrushRect": "Airbrush",
-    "bucketRect": "Paint Bucket",
-    "cropRect": "Crop",
-    "brushRect": "Paint Brush",
-    "polygonRect": "Polygon Tool",
-    "openRect": "Open File",
-    "saveRect": "Save File",
-    "clearRect": "Clear Canvas",
-    "colourDisplayRect": "Foreground Colour",
-    "backColourDisplayRect": "Background Colour",
-    "playPauseRect": "Play/Pause",
-    "stopRect": "Stop",
-    "prevRect": "Previous",
-    "nextRect": "Next",
-    "loopRect": "Loop",
-    "helpRect": "Help",
-    "volUpRect": "Vol Up",
-    "volDownRect": "Vol Down"
+    "pencilRect": "\"Pencil\"",
+    "eraserRect": "\"Eraser\"",
+    "shapeRectRect": "\"Rectangle Tool\"",
+    "shapeEllipseRect": "\"Ellipse Tool\"",
+    "lineRect": "\"Line Tool\"",
+    "airbrushRect": "\"Airbrush\"",
+    "bucketRect": "\"Paint Bucket\"",
+    "cropRect": "\"Crop\"",
+    "brushRect": "\"Paint Brush\"",
+    "polygonRect": "\"Polygon Tool\"",
+    "openRect": "\"Open File\"",
+    "saveRect": "\"Save File\"",
+    "clearRect": "\"Clear Canvas\"",
+    "colourDisplayRect": "\"Foreground Colour\"",
+    "backColourDisplayRect": "\"Background Colour\"",
+    "playPauseRect": "\"Play/Pause\"",
+    "stopRect": "\"Stop\"",
+    "prevRect": "\"Previous\"",
+    "nextRect": "\"Next\"",
+    "loopRect": "\"Loop\"",
+    "helpRect": "\"Help\"",
+    "volChooserRect": "\"Volume - \" + str(int(musicRegistry[\"volume\"]*100)) + \"%\"",
+    "toggleFilledRect": "\"Toggle Shape Fill\""
   },
   "descriptions": {
     "nothing": ["Nothing", "Select a tool!"],
@@ -145,5 +148,6 @@
     "stampfour": ["Stamp One", "Stamp One"],
     "stampfive": ["Stamp One", "Stamp One"],
     "stampsix": ["Stamp One", "Stamp One"]
-  }
+  },
+  "helpImage": "images/background.jpg"
 }

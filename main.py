@@ -63,6 +63,9 @@ backgroundImage = image.load(config["backgroundImage"])
 backgroundImage = transform.smoothscale(backgroundImage, size)
 screen.blit(backgroundImage, (0,0))
 
+helpImage = image.load(config["helpImage"])
+helpImageRect = Rect(width//2-helpImage.get_width()//2, height//2-helpImage.get_height()//2, helpImage.get_width(), helpImage.get_height())
+
 # Control variable
 running = True
 # Tracks where a drag started
@@ -77,13 +80,14 @@ canvasLoc = config["canvasLocation"]
 cropSurface = None
 # Whether a tool is currently engaged
 tooling = False
-# Tools that will only be executed if the dragging started over the canvas
-mustBeOverCanvas = ["bucket", "crop", "brush", "polygon", "stampone", "stamptwo", "stampthree", "stampfour", "stampfive", "stampsix"]
 # Rectangles whose colours will not be updated by the loop
 doNotUpdateOnReDraw = ["colourDisplayRect", "backDisplayRect", "volIndicatorRect"]
 # List of surfaces to undo and redo
 undoList = []
 redoList = []
+
+# Whether the event loop needs more assistance
+furthurProcessing = 0
 
 # Whether the tool modified the canvas on the iteration
 toolStatus = False
@@ -118,6 +122,9 @@ onPolygon = False
 # If a point was drawn and the mouse has not been released yet
 pointDrawLock = False
 
+# If the help menu is open
+helpOpen = False
+
 # Rate limits tools such as air brush
 toolDelay = ptime.time()
 
@@ -150,6 +157,7 @@ rectRegistry = {"colourDisplayRect": [Rect(config["rects"]["colourDisplayRect"][
                 "nextRect": [Rect(config["rects"]["nextRect"][0]), eval(config["rects"]["nextRect"][1]), config["rects"]["nextRect"][2]],
                 "loopRect": [Rect(config["rects"]["loopRect"][0]), eval(config["rects"]["loopRect"][1]), config["rects"]["loopRect"][2]],
                 "helpRect": [Rect(config["rects"]["helpRect"][0]), eval(config["rects"]["helpRect"][1]), config["rects"]["helpRect"][2]],
+                "toggleFilledRect": [Rect(config["rects"]["toggleFilledRect"][0]), eval(config["rects"]["toggleFilledRect"][1]), config["rects"]["toggleFilledRect"][2]],
                 "volIndicatorRect": [Rect(config["rects"]["volIndicatorRect"][0]), eval(config["rects"]["volIndicatorRect"][1]), config["rects"]["volIndicatorRect"][2]],
                 "stampOneRect": [Rect(config["rects"]["stampOneRect"][0]), eval(config["rects"]["stampOneRect"][1]), config["rects"]["stampOneRect"][2]],
                 "stampTwoRect": [Rect(config["rects"]["stampTwoRect"][0]), eval(config["rects"]["stampTwoRect"][1]), config["rects"]["stampTwoRect"][2]],
@@ -502,8 +510,8 @@ def polygon(mpos, lregistry):
         undoList.append(canvasSurface.copy())
         # Clear the registry
         polygonRegistry = {}
-        # Inform the caller that the surface has been modified
-        return True
+        # Do not inform the caller that the surface has been modified, or else there will be a duplicate undo
+        return False
     else:
         # Check that the mouse has been released since the lasft point
         if not pointDrawLock:
@@ -558,23 +566,23 @@ while running:
                     canvasSurface.blit(undoList[len(undoList)-1], (0, 0))
                     screen.blit(canvasSurface, canvasLoc)
         if evt.type == MOUSEBUTTONDOWN:
-            tooling = True
-            oldscreen = canvasSurface.copy()
-            dragStart = mouse.get_pos()
-            if evt.button == 4:
-                registry["toolThickness"] += 1 if registry["toolThickness"] < 100 else 0
-            elif evt.button == 5:
-                registry["toolThickness"] -= 1 if registry["toolThickness"] > 1 else 0
+            if helpOpen:
+                if not helpImageRect.collidepoint(mp[0], mp[1]):
+                    helpOpen = False
+            else:
+                tooling = True
+                oldscreen = canvasSurface.copy()
+                dragStart = mouse.get_pos()
+                if evt.button == 4:
+                    registry["toolThickness"] += 1 if registry["toolThickness"] < 100 else 0
+                elif evt.button == 5:
+                    registry["toolThickness"] -= 1 if registry["toolThickness"] > 1 else 0
         if evt.type == MOUSEBUTTONUP:
             tooling = False
             pointDrawLock = False
             smartLog("TOOL STATUS: %s"%toolStatus, 3)
-            # Undo logic:
-            if ((canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and registry["toolName"] != "nothing") or
-                (clearRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]))) and toolStatus:
-                needToSave = True
-                undoList.append(canvasSurface.copy())
-                smartLog("LEN UNDOLIST %d"%len(undoList), 3)
+            smartLog("a"+str(ptime.time()), 3)
+            furthurProcessing = 2
         if evt.type == SONG_END:
             if musicRegistry["loop"]:
                 mixer.music.stop()
@@ -587,6 +595,19 @@ while running:
                 mixer.music.load(musicRegistry["queue"][musicRegistry["playing"]])
                 mixer.music.set_volume(musicRegistry["volume"])
                 mixer.music.play()
+
+    # For some reason, event loop sometimes is out of sync, so we will make sure that it has processed everything
+    if furthurProcessing:
+        smartLog("Tool status %s"%toolStatus, 3)
+        if toolStatus:
+            if ((canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and registry["toolName"] != "nothing") or
+                (clearRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]))) and toolStatus:
+                needToSave = True
+                undoList.append(canvasSurface.copy())
+                smartLog("Processed.", 3)
+                smartLog("LEN UNDOLIST %d"%len(undoList), 3)
+                furthurProcessing = 0
+
 
     toolStatus = False
 
@@ -603,7 +624,7 @@ while running:
     volChooserImage = image.load(config["rects"]["volChooserRect"][3])
     volChooserImage = transform.smoothscale(volChooserImage, (volChooserRect.width, volChooserRect.height))
     screen.blit(volChooserImage, volChooserRect.topleft)
-    musicFileNameText = infoFont.render("Playing - " + musicRegistry["queue"][musicRegistry["playing"]][6:musicRegistry["queue"][musicRegistry["playing"]].rfind(".")] + " - " + str(int(5 * round(musicRegistry["volume"]*100/5))) + "% volume" if musicRegistry["playing"] != -1 else "Nothing is playing", True, WHITE)
+    musicFileNameText = infoFont.render("Playing - " + musicRegistry["queue"][musicRegistry["playing"]][6:musicRegistry["queue"][musicRegistry["playing"]].rfind(".")] if musicRegistry["playing"] != -1 and not musicRegistry["paused"] else "PAUSED" if musicRegistry["paused"] else "Nothing is playing", True, WHITE)
     screen.blit(musicFileNameText, (volChooserRect.right+30, volChooserRect[1]))
 
     toolDescText = infoFont.render("{0}: {1}".format(config["descriptions"][registry["toolName"]][0], config["descriptions"][registry["toolName"]][1]), True, WHITE)
@@ -613,11 +634,11 @@ while running:
     for key, rectArray in rectRegistry.items():
         draw.rect(screen, rectArray[1], rectArray[0], rectArray[2])
         if key in config["rects"] and len(config["rects"][key]) > 3:
-
-            if key == "loopRect" and musicRegistry["loop"]:
+            if (key == "loopRect" and musicRegistry["loop"]) or (key == "toggleFilledRect" and shapeFilled):
                 icon = image.load(config["rects"][key][4])
             else:
                 icon = image.load(config["rects"][key][3])
+
             icon = transform.smoothscale(icon, (rectArray[0][2]-10, rectArray[0][3]-10))
             screen.blit(icon, (rectArray[0][0]+5, rectArray[0][1]+5))
     #draw.rect(screen, WHITE, clearRect)
@@ -689,7 +710,7 @@ while running:
             registry["toolName"] = "line"
             registry["toolArgs"]["updateOldPerTick"] = False
             for key, value in rectRegistry.items():
-                if key not in doNotUpdateOnReDraw or "back":
+                if key not in doNotUpdateOnReDraw:
                     rectRegistry[key][1] = GREEN
             rectRegistry["lineRect"][1] = RED
         elif rectRegistry["airbrushRect"][0].collidepoint(mp[0], mp[1]):
@@ -822,58 +843,66 @@ while running:
             mixer.music.play()
         elif rectRegistry["loopRect"][0].collidepoint(mp[0], mp[1]):
             musicRegistry["loop"] = not musicRegistry["loop"]
+        elif rectRegistry["toggleFilledRect"][0].collidepoint(mp[0], mp[1]):
+            shapeFilled = not shapeFilled
+        elif rectRegistry["helpRect"][0].collidepoint(mp[0], mp[1]):
+            helpOpen = True
 
-    if volChooserRect.collidepoint(mp[0], mp[1]) and mb[0]:
+    if volChooserRect.collidepoint(mp[0], mp[1]) and mb[0] and not helpOpen:
         leftMost = config["rects"]["volIndicatorRect"][0][0] - 150
         rectRegistry["volIndicatorRect"][0][0] = mp[0] if leftMost-1 < mp[0] < config["rects"]["volIndicatorRect"][0][0]+1 else config["rects"]["volIndicatorRect"][0][0] if mp[0] > config["rects"]["volIndicatorRect"][0][0] else leftMost
         musicRegistry["volume"] = (rectRegistry["volIndicatorRect"][0][0] - leftMost)/150
         mixer.music.set_volume(musicRegistry["volume"])
-    for key, checkRect in rectRegistry.items():
-        if key not in ["colourDisplayRect", "backgroundColourDisplayRect", "volIndicatorRect"]:
-            if checkRect[0].collidepoint(mp[0], mp[1]):
-                draw.rect(screen, RED, checkRect[0], checkRect[2])
+
+    if not helpOpen:
+        for key, checkRect in rectRegistry.items():
+            if key not in ["colourDisplayRect", "backColourDisplayRect", "volIndicatorRect"]:
+                if checkRect[0].collidepoint(mp[0], mp[1]):
+                    draw.rect(screen, RED, checkRect[0], checkRect[2])
 
     # Check if the mouse is over the colour wheel and a tool is currently not being used
-    if mb[0] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]):
-        if palRect.collidepoint(mp[0], mp[1])  and ((mp[0]-palRect.centerx)**2 + (mp[1]-palRect.centery)**2)**0.5 < 101 and not onPolygon:
+    if mb[0] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and not helpOpen:
+        if palRect.collidepoint(mp[0], mp[1])  and ((mp[0]-palRect.centerx)**2 + (mp[1]-palRect.centery)**2)**0.5 < 101 and not onPolygon and not tooling:
             # Get the colour and the point
             registry["toolColour"] = screen.get_at((mp[0], mp[1]))
 
     # Check if the mouse is over the colour wheel and a tool is currently not being used
-    if mb[2] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]):
+    if mb[2] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and not tooling and not helpOpen:
         if palRect.collidepoint(mp[0], mp[1]) and (
                 (mp[0] - palRect.centerx) ** 2 + (mp[1] - palRect.centery) ** 2) ** 0.5 < 101 and not onPolygon:
             # Get the colour and the point
             registry["backgroundColour"] = screen.get_at((mp[0], mp[1]))
 
     # Check if the user clicked on left-click
-    if mb[0]:
+    if mb[0] and not helpOpen:
         # Execute the tool function, checking if the drag must start on the canvas
-        if not registry["toolName"] in mustBeOverCanvas or canvasRect.collidepoint(mp[0], mp[1]):
+        if canvasRect.collidepoint(mp[0], mp[1]):
             toolStatus = registry["toolFunc"](convertToCanvas(mp), registry)
             smartLog("JUST FINISHED TOOL STATUS %s"%toolStatus, 3)
+            smartLog("b"+str(ptime.time()), 3)
             screen.blit(canvasSurface, canvasLoc)
         toolDelay = ptime.time()
 
         # If the old position needs to be updated per tick, even when the tool is engaged (shadow), update it
         if registry["toolArgs"]["updateOldPerTick"]:
             lastTickLocation = convertToCanvas(mp)
-    else:
+    elif not helpOpen:
         # If the mouse is currently not being clicked, update the dragStart variable to keep track of where the cursor
         # was. So that we can get a start point for shape tools
         dragStart = convertToCanvas(mp)
         lastTickLocation = convertToCanvas(mp)
 
     # Tooltips
-    rectRegistryAndStatic = rectRegistry.copy()
-    rectRegistryAndStatic.update({"clearRect": [clearRect], "saveRect": [saveRect], "openRect": [openRect]})
-    for rectName, rectData in rectRegistryAndStatic.items():
-        if rectData[0].collidepoint(mp[0], mp[1]):
-            if rectName in config["tooltips"]:
-                tipText = tipFont.render(config["tooltips"][rectName], True, WHITE)
-                tipRect = Rect(mp[0], mp[1]-tipText.get_height(), tipText.get_width()+10, tipText.get_height())
-                draw.rect(screen, BLACK, tipRect)
-                screen.blit(tipText, (mp[0]+5, mp[1]-tipText.get_height()-2))
+    if not helpOpen:
+        rectRegistryAndStatic = rectRegistry.copy()
+        rectRegistryAndStatic.update({"clearRect": [clearRect], "saveRect": [saveRect], "openRect": [openRect], "volChooserRect": [volChooserRect]})
+        for rectName, rectData in rectRegistryAndStatic.items():
+            if rectData[0].collidepoint(mp[0], mp[1]):
+                if rectName in config["tooltips"]:
+                    tipText = tipFont.render(eval(config["tooltips"][rectName]), True, WHITE)
+                    tipRect = Rect(mp[0], mp[1]-tipText.get_height(), tipText.get_width()+10, tipText.get_height())
+                    draw.rect(screen, BLACK, tipRect)
+                    screen.blit(tipText, (mp[0]+5, mp[1]-tipText.get_height()-2))
 
     # Draw the cropped surface onto the canvas after the tool is let go
     if cropSurface and not tooling:
@@ -890,6 +919,10 @@ while running:
         undoList.append(canvasSurface.copy())
         # Mark as a change occurred
         needToSave = True
+    furthurProcessing -= 1 if furthurProcessing > 0 else 0
+
+    if helpOpen:
+        screen.blit(helpImage, (width//2-helpImage.get_width()//2, height//2-helpImage.get_height()//2))
     # Update the display
     display.flip()
 raise SystemExit
