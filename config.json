@@ -1,12 +1,12 @@
 {
   "title": "Microsoft Paint",
   "backgroundImage": "images/background.jpg",
-  "canvasLocation": [150, 180],
+  "canvasLocation": [150, 130],
   "canvasSize": [700, 500],
   "screenSize": [1080, 768],
-  "paletteImage": "images/colpal.png",
+  "paletteImage": "images/colpal.jpg",
   "paletteSize": [200, 200],
-  "paletteLocation": [865, 180],
+  "paletteLocation": [865, 130],
   "stamp1Loc": "images/background.jpg",
   "stamp2Loc": "images/stampone.png",
   "stamp3Loc": "images/stampone.png",
@@ -15,67 +15,67 @@
   "stamp6Loc": "images/stampone.png",
   "rects": {
     "colourDisplayRect":[
-      [865, 400, 50, 50], "WHITE", 0
+      [865, 350, 100, 50], "WHITE", 0
     ],
     "backColourDisplayRect":[
-      [915, 400, 50, 50], "WHITE", 0
+      [965, 350, 100, 50], "WHITE", 0
     ],
     "pencilRect":[
-      [20, 180, 40, 40], "GREEN", 2, "images/tool.png"
+      [20, 130, 40, 40], "GREEN", 2, "images/tool.png"
     ],
     "eraserRect":[
-      [70,180,40,40],"GREEN", 2, "images/tool.png"
+      [70,130,40,40],"GREEN", 2, "images/tool.png"
     ],
     "shapeRectRect":[
-      [20,270,40,40],"GREEN", 2, "images/tool.png"
+      [20,220,40,40],"GREEN", 2, "images/tool.png"
     ],
     "shapeEllipseRect":[
-      [70,270,40,40],"GREEN", 2, "images/tool.png"
+      [70,220,40,40],"GREEN", 2, "images/tool.png"
     ],
     "lineRect":[
-      [20,360,40,40],"GREEN", 2, "images/tool.png"
+      [20,310,40,40],"GREEN", 2, "images/tool.png"
     ],
     "airbrushRect":[
-      [70,360,40,40],"GREEN", 2, "images/tool.png"
+      [70,310,40,40],"GREEN", 2, "images/tool.png"
     ],
     "bucketRect":[
-      [20,450,40,40],"GREEN", 2, "images/tool.png"
+      [20,400,40,40],"GREEN", 2, "images/tool.png"
      ],
     "cropRect":[
-      [70,450,40,40],"GREEN", 2, "images/tool.png"
+      [70,400,40,40],"GREEN", 2, "images/tool.png"
     ],
     "brushRect":[
-      [20,540,40,40],"GREEN", 2, "images/tool.png"
+      [20,490,40,40],"GREEN", 2, "images/tool.png"
     ],
     "polygonRect":[
-      [70,540,40,40],"GREEN", 2, "images/tool.png"
+      [70,490,40,40],"GREEN", 2, "images/tool.png"
     ],
     "stampOneRect":[
-      [245,715,40,40],"GREEN", 2, "images/tool.png"
+      [245,665,40,40],"GREEN", 2, "images/tool.png"
     ],
     "stampTwoRect":[
-      [295,715,40,40],"GREEN", 2, "images/tool.png"
+      [295,665,40,40],"GREEN", 2, "images/tool.png"
     ],
     "stampThreeRect":[
-      [345,715,40,40],"GREEN", 2, "images/tool.png"
+      [345,665,40,40],"GREEN", 2, "images/tool.png"
     ],
     "stampFourRect":[
-      [395,715,40,40],"GREEN", 2, "images/tool.png"
+      [395,665,40,40],"GREEN", 2, "images/tool.png"
     ],
     "stampFiveRect":[
-      [445,715,40,40],"GREEN", 2, "images/tool.png"
+      [445,665,40,40],"GREEN", 2, "images/tool.png"
     ],
     "stampSixRect":[
-      [495,715,40,40],"GREEN", 2, "images/tool.png"
+      [495,665,40,40],"GREEN", 2, "images/tool.png"
     ],
     "openRect":[
-      [946, 10, 40, 40],"GREEN", 2, "images/tool.png"
+      [882, 10, 40, 40],"GREEN", 2, "images/tool.png"
     ],
     "saveRect":[
-      [1010, 10, 40, 40],"GREEN", 2, "images/tool.png"
+      [946, 10, 40, 40],"GREEN", 2, "images/tool.png"
      ],
     "clearRect":[
-      [882, 10, 40, 40],"GREEN", 2, "images/tool.png"
+      [818, 10, 40, 40],"GREEN", 2, "images/tool.png"
     ],
     "prevRect": [
       [10, 10, 40, 40],"GREEN", 2, "images/tool.png"
@@ -93,16 +93,16 @@
       [230, 10, 40, 40],"GREEN", 2, "images/tool.png", "images/background.jpg"
     ],
     "volChooserRect": [
-      [290, 15, 200, 30],"GREEN", 2, "images/volchooser.png"
+      [860, 715, 200, 30],"GREEN", 2, "images/volchooser.png"
     ],
     "volIndicatorRect": [
-      [475, 15, 10, 30],"BLACK", 0
+      [1045, 715, 10, 30],"BLACK", 0
     ],
     "helpRect": [
-      [865, 610, 50, 50],"GREEN", 2, "images/tool.png"
+      [1010, 10, 40, 40],"GREEN", 0, "images/tool.png", false
     ],
     "toggleFilledRect": [
-      [935, 610, 50, 50], "GREEN", 2, "images/tool.png", "images/background.jpg"
+      [20, 580, 90, 40], "GREEN", 2, "images/tool.png", "images/background.jpg"
     ]
   },
   "tooltips": {
@@ -149,5 +149,5 @@
     "stampfive": ["Stamp One", "Stamp One"],
     "stampsix": ["Stamp One", "Stamp One"]
   },
-  "helpImage": "images/background.jpg"
+  "helpImage": "images/colpal.png"
 }

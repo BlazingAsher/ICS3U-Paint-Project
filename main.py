@@ -12,7 +12,7 @@ import os
 import sys
 print("Copyright (c) 2018 David Hui. All rights reserved.")
 print("Permission is hereby granted to modify and redistribute this program for educational purposes with attribution.")
-dev = True
+dev = False
 def smartLog(message, level):
     levelMap = {0: "[CRIT]", 1:"[ERROR]", 2: "[WARN]", 3:"[INFO]"}
     if dev or level < 2:
@@ -103,6 +103,9 @@ musicRegistry = {"playing": -1, "queue": ["music/01.ogg","music/02.ogg", "music/
 # Stores info for the polygon tool
 polygonRegistry = {}
 
+# Stores loaded images
+imageRegistry = {}
+
 # Defines the canvas surface and fills it with white
 canvasSurface = Surface(canvasSize)
 canvasSurface.fill(WHITE)
@@ -134,7 +137,7 @@ root.withdraw()
 
 # Initialize fonts
 font.init()
-infoFont = font.SysFont("Segoe UI", 24)
+infoFont = font.SysFont("Segoe UI", 20)
 tipFont = font.SysFont("Segoe UI", 16)
 
 # Initialize the rectangles and store them in a dictionary
@@ -186,6 +189,27 @@ screen.blit(canvasSurface, canvasLoc)
 # Load ALL images before the while loop
 palPic = image.load(config["paletteImage"])
 screen.blit(palPic, config["paletteLocation"])
+
+for key, rectArray in rectRegistry.items():
+        if key in config["rects"] and len(config["rects"][key]) > 3:
+            if (key == "loopRect" and musicRegistry["loop"]) or (key == "toggleFilledRect" and shapeFilled):
+                icon = image.load(config["rects"][key][4])
+            else:
+                icon = image.load(config["rects"][key][3])
+
+            icon = transform.smoothscale(icon, (rectArray[0][2]-rectArray[2]*2, rectArray[0][3]-rectArray[2]*2))
+            imageRegistry[key] = icon
+icon = image.load(config["rects"]["clearRect"][3])
+icon = transform.smoothscale(icon, (clearRect.width, clearRect.height))
+imageRegistry["clearRect"] = icon
+
+icon = image.load(config["rects"]["openRect"][3])
+icon = transform.smoothscale(icon, (openRect.width, openRect.height))
+imageRegistry["openRect"] = icon
+
+icon = image.load(config["rects"]["saveRect"][3])
+icon = transform.smoothscale(icon, (saveRect.width, saveRect.height))
+imageRegistry["saveRect"] = icon
 
 # Load the stamps
 for i in range(1, 7):
@@ -313,15 +337,16 @@ def dShapeRect(mpos, lregistry):
 def crop(mpos, lregistry):
     global cropSurface
     # Restore the old screen as we are drawing the guide rectangle
-    canvasSurface.blit(oldscreen, (0, 0))
-    tempRect = Rect(dragStart[0], dragStart[1], mpos[0]-dragStart[0], mpos[1]-dragStart[1])
-    tempRect.normalize()
-    # Make sure the width is reasonable before cropping
-    if tempRect.height > 2 and tempRect.width > 2:
-        # Take a screen capture and then draw the guide rectangle
-        cropSurface = oldscreen.subsurface(tempRect)
-        draw.rect(canvasSurface, RED, tempRect, 2)
-        return True
+    if canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]):
+        canvasSurface.blit(oldscreen, (0, 0))
+        tempRect = Rect(dragStart[0], dragStart[1], mpos[0]-dragStart[0], mpos[1]-dragStart[1])
+        tempRect.normalize()
+        # Make sure the width is reasonable before cropping
+        if tempRect.height > 2 and tempRect.width > 2:
+            # Take a screen capture and then draw the guide rectangle
+            cropSurface = oldscreen.subsurface(tempRect)
+            draw.rect(canvasSurface, RED, tempRect, 2)
+            return True
     return False
 
 
@@ -408,10 +433,12 @@ def airbrush(mpos, lregistry):
 
 # Paint bucket tool
 def bucket(mpos, lregistry):
-    global toolDelay
+    global toolDelay, pointDrawLock
 
     # Rate limiting so that the program doesn't make many operations per click
-    if ptime.time() - toolDelay > 0.001:
+    if not pointDrawLock:
+        # Force the user to mouse button up
+        pointDrawLock = True
         # Convert the surface into a pixel array (MUCH better performance)
         pxArray = PixelArray(canvasSurface)
         # Grab the colour at the position of the mouse
@@ -624,37 +651,27 @@ while running:
     volChooserImage = image.load(config["rects"]["volChooserRect"][3])
     volChooserImage = transform.smoothscale(volChooserImage, (volChooserRect.width, volChooserRect.height))
     screen.blit(volChooserImage, volChooserRect.topleft)
-    musicFileNameText = infoFont.render("Playing - " + musicRegistry["queue"][musicRegistry["playing"]][6:musicRegistry["queue"][musicRegistry["playing"]].rfind(".")] if musicRegistry["playing"] != -1 and not musicRegistry["paused"] else "PAUSED" if musicRegistry["paused"] else "Nothing is playing", True, WHITE)
-    screen.blit(musicFileNameText, (volChooserRect.right+30, volChooserRect[1]))
+    musicFileNameText = infoFont.render("Playing - " + musicRegistry["queue"][musicRegistry["playing"]][musicRegistry["queue"][musicRegistry["playing"]].rfind("/")+1:musicRegistry["queue"][musicRegistry["playing"]].rfind(".")] if musicRegistry["playing"] != -1 and not musicRegistry["paused"] else "PAUSED" if musicRegistry["paused"] else "Nothing is playing", True, WHITE)
+    screen.blit(musicFileNameText, (rectRegistry["loopRect"][0].right+30, rectRegistry["loopRect"][0][1]+5))
 
     toolDescText = infoFont.render("{0}: {1}".format(config["descriptions"][registry["toolName"]][0], config["descriptions"][registry["toolName"]][1]), True, WHITE)
-    screen.blit(toolDescText, (20, 100))
+    screen.blit(toolDescText, (20, height-45))
 
     # Draw rects
     for key, rectArray in rectRegistry.items():
-        draw.rect(screen, rectArray[1], rectArray[0], rectArray[2])
-        if key in config["rects"] and len(config["rects"][key]) > 3:
-            if (key == "loopRect" and musicRegistry["loop"]) or (key == "toggleFilledRect" and shapeFilled):
-                icon = image.load(config["rects"][key][4])
-            else:
-                icon = image.load(config["rects"][key][3])
-
-            icon = transform.smoothscale(icon, (rectArray[0][2]-10, rectArray[0][3]-10))
-            screen.blit(icon, (rectArray[0][0]+5, rectArray[0][1]+5))
+        if len(config["rects"][key]) < 5 or config["rects"][key][4]:
+            draw.rect(screen, rectArray[1], rectArray[0], rectArray[2])
+        if key in imageRegistry:
+            screen.blit(imageRegistry[key], (rectArray[0][0]+rectArray[2], rectArray[0][1]+rectArray[2]))
+            
     #draw.rect(screen, WHITE, clearRect)
-    icon = image.load(config["rects"]["clearRect"][3])
-    icon = transform.smoothscale(icon, (clearRect.width, clearRect.height))
-    screen.blit(icon, clearRect.topleft)
+    screen.blit(imageRegistry["clearRect"], clearRect.topleft)
 
     #draw.rect(screen, WHITE, openRect)
-    icon = image.load(config["rects"]["openRect"][3])
-    icon = transform.smoothscale(icon, (openRect.width, openRect.height))
-    screen.blit(icon, openRect.topleft)
+    screen.blit(imageRegistry["openRect"], openRect.topleft)
 
     #draw.rect(screen, WHITE, saveRect)
-    icon = image.load(config["rects"]["saveRect"][3])
-    icon = transform.smoothscale(icon, (saveRect.width, saveRect.height))
-    screen.blit(icon, saveRect.topleft)
+    screen.blit(imageRegistry["saveRect"], saveRect.topleft)
 
 
     # Draw text
@@ -663,11 +680,10 @@ while running:
     #txtMouseLoc = eval("infoFont.render(\"X: {0}  Y: {1}\".format"+str(convertToCanvas(mp) if canvasRect.collidepoint(mp[0], mp[1]) else (0,0))+", True, WHITE)")
 
     txtMouseLoc = infoFont.render("X: {0}  Y:{1}".format(mp[0], mp[1]), True, WHITE)
-    screen.blit(txtMouseLoc, (20, height-50))
+    screen.blit(txtMouseLoc, (20, height-70))
 
     txtThickness = infoFont.render("Thickness: {0}".format(registry["toolThickness"]), True, WHITE)
-    screen.blit(txtThickness, (20, height-75))
-
+    screen.blit(txtThickness, (20, height-95))
     # Check if the cursor was drawing and did not release
     # Check if the cursor has clicked on a tool button
     if mb[0] and not tooling and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and not onPolygon:
@@ -843,8 +859,22 @@ while running:
             mixer.music.play()
         elif rectRegistry["loopRect"][0].collidepoint(mp[0], mp[1]):
             musicRegistry["loop"] = not musicRegistry["loop"]
+            if musicRegistry["loop"]:
+                icon = image.load(config["rects"]["loopRect"][4])
+            else:
+                icon = image.load(config["rects"]["loopRect"][3])
+
+            icon = transform.smoothscale(icon, (rectRegistry["loopRect"][0][2]-rectRegistry["loopRect"][2]*2, rectRegistry["loopRect"][0][3]-rectRegistry["loopRect"][2]*2))
+            imageRegistry["loopRect"] = icon
         elif rectRegistry["toggleFilledRect"][0].collidepoint(mp[0], mp[1]):
             shapeFilled = not shapeFilled
+            if shapeFilled:
+                icon = image.load(config["rects"]["toggleFilledRect"][4])
+            else:
+                icon = image.load(config["rects"]["toggleFilledRect"][3])
+
+            icon = transform.smoothscale(icon, (rectRegistry["toggleFilledRect"][0][2]-rectRegistry["toggleFilledRect"][2]*2, rectRegistry["toggleFilledRect"][0][3]-rectRegistry["toggleFilledRect"][2]*2))
+            imageRegistry["toggleFilledRect"] = icon
         elif rectRegistry["helpRect"][0].collidepoint(mp[0], mp[1]):
             helpOpen = True
 
@@ -856,18 +886,18 @@ while running:
 
     if not helpOpen:
         for key, checkRect in rectRegistry.items():
-            if key not in ["colourDisplayRect", "backColourDisplayRect", "volIndicatorRect"]:
+            if key not in ["colourDisplayRect", "backColourDisplayRect", "volIndicatorRect", "helpRect"]:
                 if checkRect[0].collidepoint(mp[0], mp[1]):
                     draw.rect(screen, RED, checkRect[0], checkRect[2])
 
     # Check if the mouse is over the colour wheel and a tool is currently not being used
     if mb[0] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and not helpOpen:
-        if palRect.collidepoint(mp[0], mp[1])  and ((mp[0]-palRect.centerx)**2 + (mp[1]-palRect.centery)**2)**0.5 < 101 and not onPolygon and not tooling:
+        if palRect.collidepoint(mp[0], mp[1])  and ((mp[0]-palRect.centerx)**2 + (mp[1]-palRect.centery)**2)**0.5 < 101 and not onPolygon:
             # Get the colour and the point
             registry["toolColour"] = screen.get_at((mp[0], mp[1]))
 
     # Check if the mouse is over the colour wheel and a tool is currently not being used
-    if mb[2] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and not tooling and not helpOpen:
+    if mb[2] and not canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and not helpOpen:
         if palRect.collidepoint(mp[0], mp[1]) and (
                 (mp[0] - palRect.centerx) ** 2 + (mp[1] - palRect.centery) ** 2) ** 0.5 < 101 and not onPolygon:
             # Get the colour and the point
