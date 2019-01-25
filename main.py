@@ -453,7 +453,6 @@ def eraser(mpos, lregistry):
         # x value would be over canvas width, remove the overflow from the width and change the position that we start the subsurface
         if x+w > config["canvasSize"][0]:
             amountOver = x - config["canvasSize"][0]
-            print(amountOver)
             w+=amountOver*2
             x = mpos[0]
 
@@ -609,7 +608,6 @@ def polygon(mpos, lregistry):
     else:
         # Check that the mouse has been released since the lasft point
         if not pointDrawLock:
-            print("draw")
             # Mark the tool as activated
             onPolygon = True
             # Draw a side of the polygon
