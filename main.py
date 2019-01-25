@@ -12,7 +12,7 @@ import os
 import sys
 print("Copyright (c) 2018 David Hui. All rights reserved.")
 print("Permission is hereby granted to modify and redistribute this program for educational purposes with attribution.")
-dev = False
+dev = True
 def smartLog(message, level):
     levelMap = {0: "[CRIT]", 1:"[ERROR]", 2: "[WARN]", 3:"[INFO]"}
     if dev or level < 2:
@@ -197,7 +197,7 @@ for key, rectArray in rectRegistry.items():
             else:
                 icon = image.load(config["rects"][key][3])
 
-            icon = transform.smoothscale(icon, (rectArray[0][2]-rectArray[2]*2, rectArray[0][3]-rectArray[2]*2))
+            icon = transform.smoothscale(icon, (rectArray[0][2]-rectArray[2]*2+1, rectArray[0][3]-rectArray[2]*2+1))
             imageRegistry[key] = icon
 icon = image.load(config["rects"]["clearRect"][3])
 icon = transform.smoothscale(icon, (clearRect.width, clearRect.height))
@@ -570,15 +570,16 @@ while running:
         if evt.type == QUIT:
             running = False
         if evt.type == KEYDOWN:
-            if evt.key == K_f:
+            if evt.key == K_f and dev:
                 shapeFilled = not shapeFilled
-            if evt.key == K_b:
-                canvasRe = ""
-            if evt.key == K_c:
+            if evt.key == K_c and dev:
                 smartLog("COLOUR: "+str(screen.get_at(mp)) + " "+ str(canvasSurface.get_at(convertToCanvas(mp))), 3)
             if evt.key == K_ESCAPE:
-                # Cancel the polygon drawing process
-                if onPolygon:
+                # Exit help or cancel the polygon drawing process
+                if helpOpen:
+                    if not helpImageRect.collidepoint(mp[0], mp[1]):
+                        helpOpen = False
+                elif onPolygon:
                     onPolygon = False
                     canvasSurface.blit(polygonRegistry["oldSurface"], (0,0))
                     polygonRegistry = {}
@@ -593,10 +594,7 @@ while running:
                     canvasSurface.blit(undoList[len(undoList)-1], (0, 0))
                     screen.blit(canvasSurface, canvasLoc)
         if evt.type == MOUSEBUTTONDOWN:
-            if helpOpen:
-                if not helpImageRect.collidepoint(mp[0], mp[1]):
-                    helpOpen = False
-            else:
+            if not helpOpen:
                 tooling = True
                 oldscreen = canvasSurface.copy()
                 dragStart = mouse.get_pos()
@@ -627,16 +625,15 @@ while running:
     if furthurProcessing:
         smartLog("Tool status %s"%toolStatus, 3)
         if toolStatus:
-            if ((canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) and registry["toolName"] != "nothing") or
+            if (((canvasRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]) or canvasRect.collidepoint(convertToGlobal(mp)[0], convertToGlobal(mp)[1])) and registry["toolName"] != "nothing") or
                 (clearRect.collidepoint(convertToGlobal(dragStart)[0], convertToGlobal(dragStart)[1]))) and toolStatus:
                 needToSave = True
                 undoList.append(canvasSurface.copy())
                 smartLog("Processed.", 3)
                 smartLog("LEN UNDOLIST %d"%len(undoList), 3)
                 furthurProcessing = 0
+        toolStatus = False
 
-
-    toolStatus = False
 
     # Sync the colour showing rect's colour in the rectRegistry to the tool colour
     rectRegistry["colourDisplayRect"][1] = registry["toolColour"]
@@ -659,7 +656,7 @@ while running:
 
     # Draw rects
     for key, rectArray in rectRegistry.items():
-        if len(config["rects"][key]) < 5 or config["rects"][key][4]:
+        if (len(config["rects"][key]) < 5 or config["rects"][key][4]) and key != "loopRect":
             draw.rect(screen, rectArray[1], rectArray[0], rectArray[2])
         if key in imageRegistry:
             screen.blit(imageRegistry[key], (rectArray[0][0]+rectArray[2], rectArray[0][1]+rectArray[2]))
@@ -886,7 +883,7 @@ while running:
 
     if not helpOpen:
         for key, checkRect in rectRegistry.items():
-            if key not in ["colourDisplayRect", "backColourDisplayRect", "volIndicatorRect", "helpRect"]:
+            if key not in ["colourDisplayRect", "backColourDisplayRect", "volIndicatorRect", "helpRect", "playPauseRect","stopRect","prevRect","nextRect", "loopRect"]:
                 if checkRect[0].collidepoint(mp[0], mp[1]):
                     draw.rect(screen, RED, checkRect[0], checkRect[2])
 

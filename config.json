@@ -7,12 +7,12 @@
   "paletteImage": "images/colpal.jpg",
   "paletteSize": [200, 200],
   "paletteLocation": [865, 130],
-  "stamp1Loc": "images/background.jpg",
-  "stamp2Loc": "images/stampone.png",
-  "stamp3Loc": "images/stampone.png",
-  "stamp4Loc": "images/stampone.png",
-  "stamp5Loc": "images/stampone.png",
-  "stamp6Loc": "images/stampone.png",
+  "stamp1Loc": "images/stampone.png",
+  "stamp2Loc": "images/stamptwo.png",
+  "stamp3Loc": "images/stampthree.png",
+  "stamp4Loc": "images/stampfour.png",
+  "stamp5Loc": "images/stampfive.png",
+  "stamp6Loc": "images/stampsix.png",
   "rects": {
     "colourDisplayRect":[
       [865, 350, 100, 50], "WHITE", 0
@@ -21,76 +21,76 @@
       [965, 350, 100, 50], "WHITE", 0
     ],
     "pencilRect":[
-      [20, 130, 40, 40], "GREEN", 2, "images/tool.png"
+      [20, 130, 40, 40], "GREEN", 2, "images/pencil.png"
     ],
     "eraserRect":[
-      [70,130,40,40],"GREEN", 2, "images/tool.png"
+      [70,130,40,40],"GREEN", 2, "images/eraser.png"
     ],
     "shapeRectRect":[
-      [20,220,40,40],"GREEN", 2, "images/tool.png"
+      [20,220,40,40],"GREEN", 2, "images/rect.png"
     ],
     "shapeEllipseRect":[
-      [70,220,40,40],"GREEN", 2, "images/tool.png"
+      [70,220,40,40],"GREEN", 2, "images/ellipse.png"
     ],
     "lineRect":[
-      [20,310,40,40],"GREEN", 2, "images/tool.png"
+      [20,310,40,40],"GREEN", 2, "images/line.png"
     ],
     "airbrushRect":[
-      [70,310,40,40],"GREEN", 2, "images/tool.png"
+      [70,310,40,40],"GREEN", 2, "images/airbrush.png"
     ],
     "bucketRect":[
-      [20,400,40,40],"GREEN", 2, "images/tool.png"
+      [20,400,40,40],"GREEN", 2, "images/bucket.png"
      ],
     "cropRect":[
-      [70,400,40,40],"GREEN", 2, "images/tool.png"
+      [70,400,40,40],"GREEN", 2, "images/crop.png"
     ],
     "brushRect":[
-      [20,490,40,40],"GREEN", 2, "images/tool.png"
+      [20,490,40,40],"GREEN", 2, "images/brush.png"
     ],
     "polygonRect":[
-      [70,490,40,40],"GREEN", 2, "images/tool.png"
+      [70,490,40,40],"GREEN", 2, "images/polygon.png"
     ],
     "stampOneRect":[
-      [245,665,40,40],"GREEN", 2, "images/tool.png"
+      [245,665,40,40],"GREEN", 2, "images/stamponeprev.png"
     ],
     "stampTwoRect":[
-      [295,665,40,40],"GREEN", 2, "images/tool.png"
+      [336,665,40,40],"GREEN", 2, "images/stamptwoprev.png"
     ],
     "stampThreeRect":[
-      [345,665,40,40],"GREEN", 2, "images/tool.png"
+      [427,665,40,40],"GREEN", 2, "images/stampthreeprev.jpg"
     ],
     "stampFourRect":[
-      [395,665,40,40],"GREEN", 2, "images/tool.png"
+      [518,665,40,40],"GREEN", 2, "images/stampfourprev.jpg"
     ],
     "stampFiveRect":[
-      [445,665,40,40],"GREEN", 2, "images/tool.png"
+      [610,665,40,40],"GREEN", 2, "images/stampfiveprev.png"
     ],
     "stampSixRect":[
-      [495,665,40,40],"GREEN", 2, "images/tool.png"
+      [700,665,40,40],"GREEN", 2, "images/stampsixprev.png"
     ],
     "openRect":[
-      [882, 10, 40, 40],"GREEN", 2, "images/tool.png"
+      [882, 10, 40, 40],"GREEN", 2, "images/openfile.png"
     ],
     "saveRect":[
-      [946, 10, 40, 40],"GREEN", 2, "images/tool.png"
+      [946, 10, 40, 40],"GREEN", 2, "images/savefile.png"
      ],
     "clearRect":[
-      [818, 10, 40, 40],"GREEN", 2, "images/tool.png"
+      [818, 10, 40, 40],"GREEN", 2, "images/newfile.png"
     ],
     "prevRect": [
-      [10, 10, 40, 40],"GREEN", 2, "images/tool.png"
+      [10, 10, 40, 40],"GREEN", 2, "images/back.png", false
     ],
     "playPauseRect": [
-      [60, 10, 40, 40],"GREEN", 2, "images/tool.png"
+      [60, 10, 40, 40],"GREEN", 2, "images/playpause.png", false
     ],
     "stopRect": [
-      [110, 10, 40, 40],"GREEN", 2, "images/tool.png"
+      [110, 10, 40, 40],"GREEN", 2, "images/stop.png", false
     ],
     "nextRect": [
-      [160, 10, 40, 40],"GREEN", 2, "images/tool.png"
+      [160, 10, 40, 40],"GREEN", 2, "images/next.png", false
     ],
     "loopRect": [
-      [230, 10, 40, 40],"GREEN", 2, "images/tool.png", "images/background.jpg"
+      [230, 10, 40, 40],"GREEN", 2, "images/noloop.png", "images/loop.png"
     ],
     "volChooserRect": [
       [860, 715, 200, 30],"GREEN", 2, "images/volchooser.png"
@@ -99,10 +99,10 @@
       [1045, 715, 10, 30],"BLACK", 0
     ],
     "helpRect": [
-      [1010, 10, 40, 40],"GREEN", 0, "images/tool.png", false
+      [1010, 10, 40, 40],"GREEN", 0, "images/helpicon.png", false
     ],
     "toggleFilledRect": [
-      [20, 580, 90, 40], "GREEN", 2, "images/tool.png", "images/background.jpg"
+      [20, 580, 90, 40], "GREEN", 2, "images/togglefill.png", "images/togglefillinv.png"
     ]
   },
   "tooltips": {
@@ -125,7 +125,7 @@
     "stopRect": "\"Stop\"",
     "prevRect": "\"Previous\"",
     "nextRect": "\"Next\"",
-    "loopRect": "\"Loop\"",
+    "loopRect": "\"Loop - \"+str(musicRegistry[\"loop\"])",
     "helpRect": "\"Help\"",
     "volChooserRect": "\"Volume - \" + str(int(musicRegistry[\"volume\"]*100)) + \"%\"",
     "toggleFilledRect": "\"Toggle Shape Fill\""
@@ -142,12 +142,12 @@
     "bucket": ["Bucket", "Fill a contained area"],
     "brush": ["Brush", "Create intricate drawings"],
     "crop": ["Crop", "Save only the pixels within an area"],
-    "stampone": ["Stamp One", "Stamp One"],
-    "stamptwo": ["Stamp One", "Stamp One"],
-    "stampthree": ["Stamp One", "Stamp One"],
-    "stampfour": ["Stamp One", "Stamp One"],
-    "stampfive": ["Stamp One", "Stamp One"],
-    "stampsix": ["Stamp One", "Stamp One"]
+    "stampone": ["Stamp", "Bill Gates"],
+    "stamptwo": ["Stamp", "Paul Allen"],
+    "stampthree": ["Stamp", "Windows"],
+    "stampfour": ["Stamp", "GitHub"],
+    "stampfive": ["Stamp", "Microsoft"],
+    "stampsix": ["Stamp", "Office"]
   },
-  "helpImage": "images/colpal.png"
+  "helpImage": "images/help.jpg"
 }
