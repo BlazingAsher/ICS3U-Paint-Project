@@ -674,9 +674,9 @@ while running:
     # Draw text
     # Mouse location
     # Draw 0, 0 if the mouse is not over the canvas, otherwise convert mouse pos in global context to canvas context
-    #txtMouseLoc = eval("infoFont.render(\"X: {0}  Y: {1}\".format"+str(convertToCanvas(mp) if canvasRect.collidepoint(mp[0], mp[1]) else (0,0))+", True, WHITE)")
+    txtMouseLoc = eval("infoFont.render(\"X: {0}  Y: {1}\".format"+str(convertToCanvas(mp) if canvasRect.collidepoint(mp[0], mp[1]) else (0,0))+", True, WHITE)")
 
-    txtMouseLoc = infoFont.render("X: {0}  Y:{1}".format(mp[0], mp[1]), True, WHITE)
+    #txtMouseLoc = infoFont.render("X: {0}  Y:{1}".format(mp[0], mp[1]), True, WHITE)
     screen.blit(txtMouseLoc, (20, height-70))
 
     txtThickness = infoFont.render("Thickness: {0}".format(registry["toolThickness"]), True, WHITE)
