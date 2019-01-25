@@ -271,7 +271,7 @@ def pencil(mpos, lregistry):
 
 # Open a file and load it onto the canvas
 def openFile(lregistry):
-    global needToSave, undoLoc, undoList
+    global needToSave, undoList
 
     # Check if the user has made any modifications since the last save
     if needToSave:
@@ -465,7 +465,7 @@ def eraser(mpos, lregistry):
 
         # Create a subsurface and blit it
         eraserSubsurface = backgroundsLoaded[selectedBackground].subsurface((x, y, w, h))
-        canvasSurface.blit(eraserSubsurface, (mpos[0]-lregistry["toolThickness"]//2 if not (xModMin or xModMax) else 0 if xModMin else mpos[0]-(lregistry["toolThickness"]-amountOver)//2, mpos[1]-lregistry["toolThickness"]//2 if not (yModMin or yModMax) else 0 if yModMid else mpos[1]-(lregistry["toolThickness"]-amountOver)//2))
+        canvasSurface.blit(eraserSubsurface, (mpos[0]-lregistry["toolThickness"]//2 if not (xModMin or xModMax) else 0 if xModMin else mpos[0]-(lregistry["toolThickness"]-amountOver)//2, mpos[1]-lregistry["toolThickness"]//2 if not (yModMin or yModMax) else 0 if yModMin else mpos[1]-(lregistry["toolThickness"]-amountOver)//2))
     return True
 
 
@@ -563,12 +563,12 @@ def brush(mpos, lregistry):
     draw.circle(canvasSurface, lregistry["toolColour"], mpos, lregistry["toolThickness"])
     return True
 
-def stamp(id, mpos, lregistry):
+def stamp(sid, mpos, lregistry):
     # Restore old version of screen so that we don't get overlap
     canvasSurface.blit(oldscreen, (0, 0))
 
     # Blit the correct stamp
-    exec("canvasSurface.blit(stamp{0}, (mpos[0]-stamp{0}.get_width()//2, mpos[1]-stamp{0}.get_height()//2))".format(id))
+    exec("canvasSurface.blit(stamp{0}, (mpos[0]-stamp{0}.get_width()//2, mpos[1]-stamp{0}.get_height()//2))".format(sid))
     return True
 
 def polygon(mpos, lregistry):
