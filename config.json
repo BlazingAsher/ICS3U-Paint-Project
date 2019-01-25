@@ -1,5 +1,7 @@
 {
   "title": "Microsoft Paint",
+  "backgroundMode": "colour",
+  "backgroundColour": [203, 213, 228],
   "backgroundImage": "images/background.jpg",
   "canvasLocation": [150, 130],
   "canvasSize": [700, 500],
@@ -103,6 +105,15 @@
     ],
     "toggleFilledRect": [
       [20, 580, 90, 40], "GREEN", 2, "images/togglefill.png", "images/togglefillinv.png"
+    ],
+    "backgroundDisplayRect":[
+      [865, 420, 200, 130], "GREEN", 2
+    ],
+    "backgroundBackRect":[
+      [865, 570, 95, 50], "GREEN", 2, "images/backback.png"
+    ],
+    "backgroundNextRect":[
+      [970, 570, 95, 50], "GREEN", 2, "images/nextback.png"
     ]
   },
   "tooltips": {
@@ -128,7 +139,9 @@
     "loopRect": "\"Loop - \"+str(musicRegistry[\"loop\"])",
     "helpRect": "\"Help\"",
     "volChooserRect": "\"Volume - \" + str(int(musicRegistry[\"volume\"]*100)) + \"%\"",
-    "toggleFilledRect": "\"Toggle Shape Fill\""
+    "toggleFilledRect": "\"Toggle Shape Fill\"",
+    "backgroundBackRect": "\"Previous Background\"",
+    "backgroundNextRect": "\"Next Background\""
   },
   "descriptions": {
     "nothing": ["Nothing", "Select a tool!"],
@@ -149,5 +162,7 @@
     "stampfive": ["Stamp", "Microsoft"],
     "stampsix": ["Stamp", "Office"]
   },
-  "helpImage": "images/help.jpg"
+  "helpImage": "images/help.jpg",
+  "backgrounds": ["images/95back.png","images/openback.png", "images/xpback.png", "images/10back.jpg","images/xboxback.png"],
+  "musicList": ["music/Kalimba.mp3", "music/Maid with the Flaxen Hair.mp3", "music/Music with Windows Sounds.mp3", "music/Sleep Away.mp3", "music/Windows 98 and XP Sounds Remix.mp3"]
 }
